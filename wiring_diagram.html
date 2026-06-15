@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Waste Classifier — Wiring Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c0f;--bg2:#0d1318;--bg3:#111922;--bg4:#161f2a;
+  --bd:#1c2d3e;--bd2:#243850;
+  --red:#ff3355;--orange:#ff7700;--yellow:#ffcc00;
+  --green:#00dd66;--cyan:#00ccff;--blue:#2266ff;
+  --white:#ffffff;--gray:#4a6680;--gray2:#2a3d52;
+  --text:#c8dcea;--text2:#5e7f9a;--text3:#2a3d52;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(0,204,255,.04) 0%,transparent 70%),
+    linear-gradient(rgba(28,45,62,.4) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(28,45,62,.4) 1px,transparent 1px);
+  background-size:100% 100%,40px 40px,40px 40px;
+}
+
+/* NAV */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,12,15,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:50px;
+}
+.logo{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:3px}
+.nav-r{font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:2px}
+
+/* WRAPPER */
+.wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:32px 24px 60px}
+
+/* HEADER */
+.hdr{margin-bottom:32px}
+.hdr-tag{font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hdr-tag::before{content:'';width:14px;height:1px;background:var(--cyan)}
+.hdr-h{font-size:clamp(24px,3.5vw,40px);font-weight:700;color:#fff;letter-spacing:-.5px;line-height:1.05;margin-bottom:8px}
+.hdr-sub{font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.8}
+
+/* TAB BAR */
+.tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--bd);padding-bottom:0}
+.tab{font-family:var(--mono);font-size:10px;padding:8px 16px;border-radius:4px 4px 0 0;cursor:pointer;
+  background:transparent;border:1px solid transparent;border-bottom:none;color:var(--text2);
+  transition:all .15s;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:-1px}
+.tab:hover{color:var(--cyan);background:rgba(0,204,255,.05)}
+.tab.active{color:var(--cyan);background:var(--bg2);border-color:var(--bd);border-bottom-color:var(--bg2)}
+
+/* DIAGRAM CONTAINER */
+.diagram-wrap{
+  background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden;
+  margin-bottom:20px;
+}
+.diagram-canvas{width:100%;display:block}
+
+/* STATUS BAR */
+.status-bar{
+  background:var(--bg);border-top:1px solid var(--bd);
+  padding:9px 18px;font-family:var(--mono);font-size:10px;color:var(--text3);
+  min-height:34px;transition:color .2s;letter-spacing:.5px;
+}
+.status-bar.on{color:var(--green)}
+
+/* LEGEND */
+.legend{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;
+  background:var(--bg2);border:1px solid var(--bd);border-radius:8px;
+  padding:16px 18px;margin-bottom:20px;
+}
+.legend-title{font-family:var(--mono);font-size:9px;color:var(--text2);letter-spacing:3px;text-transform:uppercase;
+  grid-column:1/-1;margin-bottom:6px}
+.leg-item{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--text2)}
+.leg-wire{width:32px;height:3px;border-radius:2px;flex-shrink:0}
+
+/* NOTES */
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.note{background:var(--bg2);border:1px solid var(--bd);border-radius:6px;padding:14px 16px}
+.note-h{font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.note-body{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8}
+.warn{color:var(--red)}
+.ok{color:var(--green)}
+.tip{color:var(--yellow)}
+
+canvas{display:block}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">SWC · WIRING DIAGRAM</div>
+  <div class="nav-r">Smart Waste Classifier · IT 171</div>
+</nav>
+
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-tag">Power & Signal Connections · Complete Reference</div>
+    <h1 class="hdr-h">Wiring Diagram<br>Power → Components</h1>
+    <div class="hdr-sub">
+      Click any component to highlight its connections.<br>
+      Two power sources: 5V 3A adapter (hardware) · Laptop USB (ESP32-CAM).
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('full')">Full Wiring</div>
+    <div class="tab" onclick="showTab('power')">Power Flow</div>
+    <div class="tab" onclick="showTab('signal')">Signal Lines</div>
+    <div class="tab" onclick="showTab('gnd')">GND Rails</div>
+  </div>
+
+  <!-- MAIN DIAGRAM -->
+  <div class="diagram-wrap">
+    <canvas id="mainC" class="diagram-canvas" height="780"></canvas>
+    <div class="status-bar" id="mainStatus">Click any component to highlight its connections · Hover to inspect wires</div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-title">Wire Color Legend</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#ff3355"></div>+5V Power (VCC)</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#1a1a1a;border:1px solid #444"></div>Ground (GND)</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#ff7700"></div>Signal — Servo PWM</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#2266ff"></div>Signal — I2C (SDA/SCL)</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#00ccff"></div>Signal — UART (TX/RX)</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#ffcc00"></div>Signal — Digital (LED/Buzzer)</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#00dd66"></div>Signal — Ultrasonic (TRIG/ECHO)</div>
+    <div class="leg-item"><div class="leg-wire" style="background:#aa44ff"></div>USB Power Line</div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="notes">
+    <div class="note">
+      <div class="note-h">⚠ Critical Rules</div>
+      <div class="note-body">
+        <span class="warn">✗ NEVER</span> plug 5V into Uno barrel jack — it needs 7–12V<br>
+        <span class="warn">✗ NEVER</span> power servos from Uno's 5V output pin<br>
+        <span class="warn">✗ NEVER</span> leave TX/RX connected when flashing ESP32-CAM<br>
+        <span class="warn">✗ NEVER</span> use separate GNDs — all must share one rail<br>
+      </div>
+    </div>
+    <div class="note">
+      <div class="note-h">✓ Presentation Day Sequence</div>
+      <div class="note-body">
+        <span class="ok">1.</span> Plug laptop USB into ESP32-CAM MB board first<br>
+        <span class="ok">2.</span> Open Serial Monitor on laptop to show ML output<br>
+        <span class="ok">3.</span> Plug 5V 3A adapter into breadboard power rail<br>
+        <span class="ok">4.</span> Servos + Arduino power on from common rail<br>
+        <span class="tip">Tip:</span> TX/RX wires connect AFTER both boards boot
+      </div>
+    </div>
+    <div class="note">
+      <div class="note-h">Current Draw Estimates</div>
+      <div class="note-body">
+        Arduino Uno board: ~50 mA<br>
+        SG90 servo (idle/load): 150–250 mA each<br>
+        MG90S servo (idle/load): 200–350 mA<br>
+        LCD + LEDs + Buzzer: ~80 mA total<br>
+        <span class="ok">Total: ~680–980 mA · Well under 3A ✓</span>
+      </div>
+    </div>
+    <div class="note">
+      <div class="note-h">ESP32-CAM GPIO Notes</div>
+      <div class="note-body">
+        GPIO12 must be LOW or floating at boot<br>
+        GPIO0 must be GND to enter flash mode<br>
+        TX = GPIO1 · RX = GPIO3<br>
+        Camera module uses GPIO 4,0,2,15,14,13,12,11,10,9<br>
+        <span class="tip">Free pins: 12,13,14,15,16 (use carefully)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// WIRING DIAGRAM ENGINE
+// ════════════════════════════════════════════════════════
+const canvas = document.getElementById('mainC');
+const ctx = canvas.getContext('2d');
+let activeComp = null;
+let activeTab = 'full';
+let hoveredWire = null;
+
+// Wire colors
+const CLR = {
+  vcc:    '#ff3355',
+  gnd:    '#333333',
+  gndStr: '#666666',
+  servo:  '#ff7700',
+  i2c:    '#2266ff',
+  uart:   '#00ccff',
+  digital:'#ffcc00',
+  ultra:  '#00dd66',
+  usb:    '#aa44ff',
+};
+
+// ── Layout positions (will be scaled on resize)
+// All positions defined in a 1280×780 coordinate space
+const BASE_W = 1280, BASE_H = 780;
+
+// Component definitions
+const COMPS = {
+  adapter: {
+    id:'adapter', label:'5V 3A\nADAPTER', sub:'Wall Outlet',
+    x:40, y:300, w:120, h:80,
+    color:'#ff3355', border:'#ff335588', bg:'#2a0810',
+    icon:'⚡'
+  },
+  laptop: {
+    id:'laptop', label:'LAPTOP\nUSB PORT', sub:'5V USB Power',
+    x:40, y:460, w:120, h:80,
+    color:'#aa44ff', border:'#aa44ff88', bg:'#1a0a2a',
+    icon:'💻'
+  },
+  breadboard: {
+    id:'breadboard', label:'POWER RAIL\n(Breadboard)', sub:'+5V · GND',
+    x:240, y:310, w:140, h:60,
+    color:'#ff3355', border:'#ff335588', bg:'#200810',
+    icon:'⬛'
+  },
+  uno: {
+    id:'uno', label:'ARDUINO\nUNO R3', sub:'Controller',
+    x:480, y:260, w:150, h:180,
+    color:'#00aaff', border:'#00aaff88', bg:'#001a2a',
+    icon:'🔷'
+  },
+  esp32: {
+    id:'esp32', label:'ESP32-CAM\n+ MB BOARD', sub:'ML Brain · WiFi',
+    x:480, y:470, w:150, h:80,
+    color:'#00dd66', border:'#00dd6688', bg:'#001a10',
+    icon:'📷'
+  },
+  servo1: {
+    id:'servo1', label:'SERVO 1\n(MG90S)', sub:'Platform/Chute · D9',
+    x:760, y:80, w:130, h:70,
+    color:'#ff7700', border:'#ff770088', bg:'#1a1000',
+    icon:'⚙'
+  },
+  servo2: {
+    id:'servo2', label:'SERVO 2\n(SG90)', sub:'Trap Door · D10',
+    x:760, y:170, w:130, h:70,
+    color:'#ff7700', border:'#ff770088', bg:'#1a1000',
+    icon:'⚙'
+  },
+  lcd: {
+    id:'lcd', label:'LCD 16×2\n(I2C)', sub:'SDA→A4 · SCL→A5',
+    x:760, y:260, w:130, h:70,
+    color:'#2266ff', border:'#2266ff88', bg:'#000a1a',
+    icon:'📺'
+  },
+  buzzer: {
+    id:'buzzer', label:'BUZZER', sub:'Active · D8',
+    x:760, y:350, w:130, h:60,
+    color:'#ffcc00', border:'#ffcc0088', bg:'#1a1200',
+    icon:'🔔'
+  },
+  led_org: {
+    id:'led_org', label:'LED\nORGANIC', sub:'Green · D3 · 220Ω',
+    x:760, y:430, w:130, h:60,
+    color:'#00dd66', border:'#00dd6688', bg:'#001a08',
+    icon:'🟢'
+  },
+  led_pap: {
+    id:'led_pap', label:'LED\nPAPER', sub:'Yellow · D4 · 220Ω',
+    x:760, y:500, w:130, h:60,
+    color:'#ffcc00', border:'#ffcc0088', bg:'#1a1400',
+    icon:'🟡'
+  },
+  led_pla: {
+    id:'led_pla', label:'LED\nPLASTIC', sub:'Blue · D5 · 220Ω',
+    x:760, y:570, w:130, h:60,
+    color:'#2266ff', border:'#2266ff88', bg:'#00081a',
+    icon:'🔵'
+  },
+  ultra: {
+    id:'ultra', label:'HC-SR04\nULTRASONIC', sub:'TRIG→D6 · ECHO→D7',
+    x:760, y:640, w:130, h:70,
+    color:'#00dd66', border:'#00dd6688', bg:'#001a0a',
+    icon:'📡'
+  },
+};
+
+// Wire definitions
+const WIRES = [
+  // ── POWER WIRES (VCC) ──
+  { id:'adap-rail-vcc', from:'adapter', to:'breadboard', color:CLR.vcc, lw:3,
+    label:'+5V', path:'right', tab:['full','power'],
+    desc:'5V 3A Adapter → Breadboard + rail' },
+  { id:'rail-uno-vcc', from:'breadboard', to:'uno', color:CLR.vcc, lw:2.5,
+    label:'+5V', path:'right', tab:['full','power'],
+    desc:'Breadboard + rail → Arduino Uno 5V pin' },
+  { id:'rail-s1-vcc', from:'breadboard', to:'servo1', color:CLR.vcc, lw:2.5,
+    label:'VCC', path:'corner-up', tab:['full','power'],
+    desc:'Breadboard + rail → Servo 1 VCC (red wire)' },
+  { id:'rail-s2-vcc', from:'breadboard', to:'servo2', color:CLR.vcc, lw:2.5,
+    label:'VCC', path:'corner-up', tab:['full','power'],
+    desc:'Breadboard + rail → Servo 2 VCC (red wire)' },
+  { id:'usb-esp', from:'laptop', to:'esp32', color:CLR.usb, lw:3,
+    label:'USB 5V', path:'right', tab:['full','power'],
+    desc:'Laptop USB → ESP32-CAM MB Board (micro USB port)' },
+
+  // ── GND WIRES ──
+  { id:'adap-gnd', from:'adapter', to:'breadboard', color:CLR.gnd, lw:2.5,
+    label:'GND', path:'right-gnd', tab:['full','gnd'],
+    desc:'5V Adapter → Breadboard – rail (common GND)' },
+  { id:'rail-uno-gnd', from:'breadboard', to:'uno', color:CLR.gnd, lw:2,
+    label:'GND', path:'right-gnd2', tab:['full','gnd'],
+    desc:'Breadboard – rail → Arduino Uno GND pin' },
+  { id:'s1-gnd', from:'servo1', to:'breadboard', color:CLR.gnd, lw:2,
+    label:'GND', path:'servo-gnd', tab:['full','gnd'],
+    desc:'Servo 1 GND (brown wire) → Breadboard – rail' },
+  { id:'s2-gnd', from:'servo2', to:'breadboard', color:CLR.gnd, lw:2,
+    label:'GND', path:'servo2-gnd', tab:['full','gnd'],
+    desc:'Servo 2 GND (brown wire) → Breadboard – rail' },
+  { id:'esp-gnd', from:'esp32', to:'breadboard', color:CLR.gnd, lw:2,
+    label:'GND', path:'esp-gnd', tab:['full','gnd'],
+    desc:'ESP32-CAM GND → Breadboard – rail (common GND)' },
+  { id:'lcd-gnd', from:'lcd', to:'breadboard', color:CLR.gnd, lw:1.5,
+    label:'GND', path:'comp-gnd', tab:['full','gnd'],
+    desc:'LCD GND → Arduino GND → Breadboard – rail' },
+  { id:'ultra-gnd', from:'ultra', to:'breadboard', color:CLR.gnd, lw:1.5,
+    label:'GND', path:'ultra-gnd', tab:['full','gnd'],
+    desc:'HC-SR04 GND → Breadboard – rail' },
+
+  // ── SIGNAL WIRES (Servo) ──
+  { id:'uno-s1', from:'uno', to:'servo1', color:CLR.servo, lw:2,
+    label:'D9', path:'right-top', tab:['full','signal'],
+    desc:'Arduino D9 → Servo 1 Signal (orange/yellow wire)' },
+  { id:'uno-s2', from:'uno', to:'servo2', color:CLR.servo, lw:2,
+    label:'D10', path:'right-mid', tab:['full','signal'],
+    desc:'Arduino D10 → Servo 2 Signal (orange/yellow wire)' },
+
+  // ── SIGNAL WIRES (I2C) ──
+  { id:'uno-lcd-sda', from:'uno', to:'lcd', color:CLR.i2c, lw:2,
+    label:'A4 SDA', path:'right-lcd', tab:['full','signal'],
+    desc:'Arduino A4 (SDA) → LCD I2C SDA' },
+  { id:'uno-lcd-scl', from:'uno', to:'lcd', color:'#4488ff', lw:2,
+    label:'A5 SCL', path:'right-lcd2', tab:['full','signal'],
+    desc:'Arduino A5 (SCL) → LCD I2C SCL' },
+
+  // ── SIGNAL WIRES (Digital) ──
+  { id:'uno-buzz', from:'uno', to:'buzzer', color:CLR.digital, lw:2,
+    label:'D8', path:'right-buzz', tab:['full','signal'],
+    desc:'Arduino D8 → Buzzer positive pin' },
+  { id:'uno-led1', from:'uno', to:'led_org', color:CLR.digital, lw:2,
+    label:'D3', path:'right-led1', tab:['full','signal'],
+    desc:'Arduino D3 → 220Ω resistor → LED Organic (+)' },
+  { id:'uno-led2', from:'uno', to:'led_pap', color:CLR.digital, lw:2,
+    label:'D4', path:'right-led2', tab:['full','signal'],
+    desc:'Arduino D4 → 220Ω resistor → LED Paper (+)' },
+  { id:'uno-led3', from:'uno', to:'led_pla', color:CLR.digital, lw:2,
+    label:'D5', path:'right-led3', tab:['full','signal'],
+    desc:'Arduino D5 → 220Ω resistor → LED Plastic (+)' },
+
+  // ── SIGNAL WIRES (Ultrasonic) ──
+  { id:'uno-trig', from:'uno', to:'ultra', color:CLR.ultra, lw:2,
+    label:'D6 TRIG', path:'right-trig', tab:['full','signal'],
+    desc:'Arduino D6 → HC-SR04 TRIG' },
+  { id:'uno-echo', from:'uno', to:'ultra', color:'#44ee88', lw:2,
+    label:'D7 ECHO', path:'right-echo', tab:['full','signal'],
+    desc:'Arduino D7 → HC-SR04 ECHO' },
+
+  // ── UART (ESP32 ↔ Uno) ──
+  { id:'esp-tx', from:'esp32', to:'uno', color:CLR.uart, lw:2,
+    label:'TX→D0', path:'esp-uart-tx', tab:['full','signal'],
+    desc:'ESP32-CAM TX (GPIO1) → Arduino D0 (RX)' },
+  { id:'esp-rx', from:'esp32', to:'uno', color:'#44ddff', lw:2,
+    label:'D1→RX', path:'esp-uart-rx', tab:['full','signal'],
+    desc:'Arduino D1 (TX) → ESP32-CAM RX (GPIO3)' },
+];
+
+// ── RESIZE & SCALE ──
+let W, H, sx, sy;
+function resize() {
+  W = canvas.clientWidth;
+  H = canvas.height = Math.max(780, W * 0.61);
+  canvas.width = W;
+  sx = W / BASE_W;
+  sy = H / BASE_H;
+  draw();
+}
+new ResizeObserver(resize).observe(canvas);
+
+function S(n) { return n * sx; }
+function SY(n) { return n * sy; }
+function cx(comp) { return S(comp.x + comp.w/2); }
+function cy(comp) { return SY(comp.y + comp.h/2); }
+function cr(comp) { return [S(comp.x+comp.w), SY(comp.y+comp.h/2)]; }
+function cl(comp) { return [S(comp.x), SY(comp.y+comp.h/2)]; }
+function ct(comp) { return [S(comp.x+comp.w/2), SY(comp.y)]; }
+function cb(comp) { return [S(comp.x+comp.w/2), SY(comp.y+comp.h)]; }
+
+// ── COMPONENT DRAWING ──
+function drawComp(c, highlight) {
+  const x=S(c.x), y=SY(c.y), w=S(c.w), h=SY(c.h);
+  const alpha = highlight === null ? 1 : highlight ? 1 : 0.35;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Shadow glow when highlighted
+  if (highlight) {
+    ctx.shadowColor = c.color;
+    ctx.shadowBlur = 18;
+  }
+
+  // Background
+  ctx.fillStyle = c.bg;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, S(6));
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = highlight ? c.color : c.border;
+  ctx.lineWidth = highlight ? 2 : 1;
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+
+  // Label
+  const lines = c.label.split('\n');
+  ctx.fillStyle = highlight ? c.color : '#fff';
+  ctx.font = `bold ${S(11)}px IBM Plex Mono`;
+  ctx.textAlign = 'center';
+  const lineH = S(14);
+  const totalH = lines.length * lineH;
+  const startY = y + h/2 - totalH/2 + lineH*0.8;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, x+w/2, startY + i*lineH);
+  });
+
+  // Sub label
+  ctx.fillStyle = c.color + '99';
+  ctx.font = `${S(8.5)}px IBM Plex Mono`;
+  ctx.fillText(c.sub, x+w/2, y+h-S(7));
+
+  ctx.restore();
+}
+
+// ── WIRE DRAWING ──
+function getWirePath(wire) {
+  const f = COMPS[wire.from], t = COMPS[wire.to];
+  const paths = [];
+
+  // Custom path routing for each wire
+  switch(wire.path) {
+    case 'right': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,fy],[tx2,ty]];
+    }
+    case 'right-gnd': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,fy+S(6)],[tx2+S(10),fy+S(6)],[tx2+S(10),ty+S(8)],[tx2,ty+S(8)]];
+    }
+    case 'right-gnd2': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      const my=SY(380);
+      return [[fx,fy+S(12)],[tx2-S(20),fy+S(12)],[tx2-S(20),ty+S(8)],[tx2,ty+S(8)]];
+    }
+    case 'corner-up': {
+      const [fx,fy]=cr(f); const [tx2,ty]=ct(t);
+      return [[fx,fy],[fx+S(40),fy],[fx+S(40),ty],[tx2,ty]];
+    }
+    case 'right-top': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,fy-S(30)],[tx2,ty-S(30)],[tx2,ty]];
+    }
+    case 'right-mid': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,fy-S(10)],[tx2,ty]];
+    }
+    case 'right-lcd': {
+      const [fx]=cr(f); const [tx2,ty]=cl(t);
+      const fy=SY(f.y+60);
+      return [[fx,fy],[tx2,ty]];
+    }
+    case 'right-lcd2': {
+      const [fx]=cr(f); const [tx2,ty]=cl(t);
+      const fy=SY(f.y+75);
+      return [[fx,fy],[tx2,ty+S(12)]];
+    }
+    case 'right-buzz': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,SY(f.y+100)],[tx2,ty]];
+    }
+    case 'right-led1': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,SY(f.y+115)],[tx2,ty]];
+    }
+    case 'right-led2': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,SY(f.y+130)],[tx2,ty]];
+    }
+    case 'right-led3': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,SY(f.y+145)],[tx2,ty]];
+    }
+    case 'right-trig': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,SY(f.y+155)],[S(720),SY(f.y+155)],[S(720),ty],[tx2,ty]];
+    }
+    case 'right-echo': {
+      const [fx,fy]=cr(f); const [tx2,ty]=cl(t);
+      return [[fx,SY(f.y+162)],[S(728),SY(f.y+162)],[S(728),ty+S(12)],[tx2,ty+S(12)]];
+    }
+    case 'servo-gnd': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      const mx=S(380);
+      return [[fx,fy+S(12)],[mx,fy+S(12)],[mx,ty-S(8)],[tx2,ty-S(8)]];
+    }
+    case 'servo2-gnd': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      const mx=S(375);
+      return [[fx,fy+S(12)],[mx,fy+S(12)],[mx,ty-S(12)],[tx2,ty-S(12)]];
+    }
+    case 'esp-gnd': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      return [[fx,fy+S(8)],[S(350),fy+S(8)],[S(350),ty+S(20)],[tx2,ty+S(20)]];
+    }
+    case 'comp-gnd': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      const mx=S(370);
+      return [[fx,fy+S(10)],[mx,fy+S(10)],[mx,ty-S(4)],[tx2,ty-S(4)]];
+    }
+    case 'ultra-gnd': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      const mx=S(360);
+      return [[fx,fy+S(12)],[mx,fy+S(12)],[mx,ty+S(28)],[tx2,ty+S(28)]];
+    }
+    case 'esp-uart-tx': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      return [[fx,fy-S(8)],[S(420),fy-S(8)],[S(420),ty+SY(130)],[tx2,ty+SY(130)]];
+    }
+    case 'esp-uart-rx': {
+      const [fx,fy]=cl(f); const [tx2,ty]=cr(t);
+      return [[fx,fy+S(8)],[S(415),fy+S(8)],[S(415),ty+SY(138)],[tx2,ty+SY(138)]];
+    }
+    default:
+      const [fx2,fy2]=cr(f); const [tx3,ty3]=cl(t);
+      return [[fx2,fy2],[tx3,ty3]];
+  }
+}
+
+function drawWire(wire, highlight) {
+  if (activeTab !== 'full' && !wire.tab.includes(activeTab)) return;
+  const path = getWirePath(wire);
+  if (!path || path.length < 2) return;
+
+  ctx.save();
+  ctx.globalAlpha = highlight === null ? 1 : highlight ? 1 : 0.1;
+  ctx.strokeStyle = wire.color;
+  ctx.lineWidth = S(wire.lw);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (highlight) {
+    ctx.shadowColor = wire.color;
+    ctx.shadowBlur = 10;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(path[0][0], path[0][1]);
+  for (let i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Wire label at midpoint
+  if (highlight && wire.label) {
+    const mid = path[Math.floor(path.length/2)];
+    ctx.fillStyle = wire.color;
+    ctx.font = `bold ${S(9)}px IBM Plex Mono`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#0d1318';
+    ctx.fillRect(mid[0]-S(18), mid[1]-S(9), S(36), S(13));
+    ctx.strokeStyle = wire.color;
+    ctx.lineWidth = 0.8;
+    ctx.shadowBlur = 0;
+    ctx.strokeRect(mid[0]-S(18), mid[1]-S(9), S(36), S(13));
+    ctx.fillStyle = wire.color;
+    ctx.fillText(wire.label, mid[0], mid[1]+S(2));
+  }
+
+  ctx.restore();
+}
+
+// ── DRAW PIN LABELS ON UNO ──
+function drawUnoPins() {
+  const uno = COMPS.uno;
+  const pins = [
+    {pin:'D9',  y:uno.y+25,  col:CLR.servo,   side:'right'},
+    {pin:'D10', y:uno.y+45,  col:CLR.servo,   side:'right'},
+    {pin:'A4',  y:uno.y+65,  col:CLR.i2c,     side:'right'},
+    {pin:'A5',  y:uno.y+80,  col:CLR.i2c,     side:'right'},
+    {pin:'D8',  y:uno.y+100, col:CLR.digital, side:'right'},
+    {pin:'D3',  y:uno.y+115, col:CLR.digital, side:'right'},
+    {pin:'D4',  y:uno.y+130, col:CLR.digital, side:'right'},
+    {pin:'D5',  y:uno.y+145, col:CLR.digital, side:'right'},
+    {pin:'D6',  y:uno.y+155, col:CLR.ultra,   side:'right'},
+    {pin:'D7',  y:uno.y+162, col:CLR.ultra,   side:'right'},
+    {pin:'5V',  y:uno.y+14,  col:CLR.vcc,     side:'left'},
+    {pin:'GND', y:uno.y+22,  col:CLR.gnd,     side:'left'},
+    {pin:'D0',  y:uno.y+130, col:CLR.uart,    side:'left'},
+    {pin:'D1',  y:uno.y+138, col:CLR.uart,    side:'left'},
+  ];
+  pins.forEach(p => {
+    const x = p.side==='right' ? S(uno.x+uno.w) : S(uno.x);
+    const y = SY(p.y);
+    // Pin dot
+    ctx.fillStyle = p.col;
+    ctx.beginPath();
+    ctx.arc(x, y, S(3.5), 0, Math.PI*2);
+    ctx.fill();
+    // Pin label
+    ctx.font = `bold ${S(7.5)}px IBM Plex Mono`;
+    ctx.fillStyle = p.col;
+    ctx.textAlign = p.side==='right' ? 'left' : 'right';
+    ctx.fillText(p.pin, x + (p.side==='right' ? S(5) : -S(5)), y+S(2.5));
+  });
+}
+
+// ── BREADBOARD RAILS ──
+function drawBreadboard() {
+  const bb = COMPS.breadboard;
+  const x=S(bb.x), y=SY(bb.y), w=S(bb.w), h=SY(bb.h);
+
+  // Top rail (+)
+  ctx.fillStyle = '#2a0810';
+  ctx.fillRect(x, y, w, h*0.42);
+  ctx.strokeStyle = '#ff335566';
+  ctx.lineWidth = 0.8;
+  ctx.strokeRect(x, y, w, h*0.42);
+
+  // Dots for + rail
+  for (let i = 0; i < 8; i++) {
+    ctx.fillStyle = CLR.vcc;
+    ctx.beginPath();
+    ctx.arc(x+w*0.12+i*(w*0.1), y+h*0.21, S(2.5), 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Bottom rail (-)
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(x, y+h*0.56, w, h*0.42);
+  ctx.strokeStyle = '#66666666';
+  ctx.strokeRect(x, y+h*0.56, w, h*0.42);
+
+  // Dots for - rail
+  for (let i = 0; i < 8; i++) {
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.arc(x+w*0.12+i*(w*0.1), y+h*0.77, S(2.5), 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Labels
+  ctx.font = `bold ${S(9)}px IBM Plex Mono`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = CLR.vcc;
+  ctx.fillText('+', x+S(4), y+h*0.28);
+  ctx.fillStyle = '#666';
+  ctx.fillText('–', x+S(4), y+h*0.8);
+}
+
+// ── RESISTOR SYMBOL ──
+function drawResistors() {
+  const leds = ['led_org','led_pap','led_pla'];
+  leds.forEach(id => {
+    const c = COMPS[id];
+    const rx = S(c.x)-S(30), ry = SY(c.y+c.h/2);
+    // Resistor box
+    ctx.fillStyle = '#1a1400';
+    ctx.strokeStyle = '#ffcc0077';
+    ctx.lineWidth = 1;
+    ctx.fillRect(rx-S(10), ry-S(5), S(20), S(10));
+    ctx.strokeRect(rx-S(10), ry-S(5), S(20), S(10));
+    ctx.fillStyle = '#ffcc0099';
+    ctx.font = `${S(6.5)}px IBM Plex Mono`;
+    ctx.textAlign = 'center';
+    ctx.fillText('220Ω', rx, ry+S(2.5));
+  });
+}
+
+// ── POWER SOURCE ICONS ──
+function drawPowerSources() {
+  // Adapter plug icon
+  const ad = COMPS.adapter;
+  ctx.fillStyle = CLR.vcc+'44';
+  ctx.font = `${S(22)}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('⚡', S(ad.x+ad.w/2), SY(ad.y+ad.h/2)+S(8));
+
+  // Laptop icon
+  const lp = COMPS.laptop;
+  ctx.fillStyle = '#aa44ff44';
+  ctx.font = `${S(20)}px sans-serif`;
+  ctx.fillText('🖥', S(lp.x+lp.w/2), SY(lp.y+lp.h/2)+S(8));
+}
+
+// ── TITLE & LABELS ──
+function drawAnnotations() {
+  // Title
+  ctx.fillStyle = '#1c2d3e';
+  ctx.fillRect(0, 0, W, SY(38));
+  ctx.fillStyle = CLR.cyan;
+  ctx.font = `bold ${S(11)}px IBM Plex Mono`;
+  ctx.textAlign = 'left';
+  ctx.fillText('SMART WASTE CLASSIFIER — COMPLETE WIRING DIAGRAM', S(16), SY(24));
+  ctx.fillStyle = '#2a3d52';
+  ctx.font = `${S(9)}px IBM Plex Mono`;
+  ctx.fillText('Power Source → Breadboard Rail → Arduino Uno + Servos   |   Laptop USB → ESP32-CAM', S(16), SY(34));
+
+  // Section divider labels
+  function sectionLabel(text, x, y, col) {
+    ctx.fillStyle = col+'22';
+    ctx.fillRect(S(x)-S(4), SY(y)-S(12), ctx.measureText(text).width+S(10), S(16));
+    ctx.strokeStyle = col+'44';
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(S(x)-S(4), SY(y)-S(12), ctx.measureText(text).width+S(10), S(16));
+    ctx.fillStyle = col;
+    ctx.font = `bold ${S(8.5)}px IBM Plex Mono`;
+    ctx.textAlign = 'left';
+    ctx.fillText(text, S(x), SY(y));
+  }
+  sectionLabel('POWER SOURCE 1', 42, 58, CLR.red);
+  sectionLabel('POWER SOURCE 2', 42, 468, '#aa44ff');
+  sectionLabel('POWER RAIL', 242, 58, CLR.red);
+  sectionLabel('CONTROLLER', 482, 58, CLR.cyan);
+  sectionLabel('ML BRAIN', 482, 468, CLR.green);
+  sectionLabel('OUTPUT DEVICES', 762, 58, CLR.orange);
+
+  // Common GND note
+  ctx.fillStyle = '#666666';
+  ctx.font = `${S(8.5)}px IBM Plex Mono`;
+  ctx.textAlign = 'left';
+  ctx.fillText('← ALL GNDs SHARE THIS RAIL →', S(220), SY(390));
+
+  // Warning box
+  ctx.fillStyle = '#2a0810';
+  ctx.strokeStyle = CLR.red+'66';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(S(42), SY(670), S(170), SY(85), S(4));
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = CLR.red;
+  ctx.font = `bold ${S(9)}px IBM Plex Mono`;
+  ctx.textAlign = 'left';
+  ctx.fillText('⚠ CRITICAL', S(52), SY(688));
+  ctx.fillStyle = CLR.red+'cc';
+  ctx.font = `${S(8)}px IBM Plex Mono`;
+  ctx.fillText('5V only into Uno 5V pin', S(52), SY(703));
+  ctx.fillText('NOT into barrel jack', S(52), SY(715));
+  ctx.fillText('Barrel jack needs 7–12V', S(52), SY(727));
+  ctx.fillText('Disconnect TX/RX before', S(52), SY(739));
+  ctx.fillText('flashing ESP32-CAM', S(52), SY(751));
+}
+
+// ── ACTIVE COMPONENT WIRES ──
+function getHighlightedWires(compId) {
+  return WIRES.filter(w => w.from === compId || w.to === compId);
+}
+
+// ── MAIN DRAW ──
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // BG
+  ctx.fillStyle = '#0d1318';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#141e28';
+  ctx.lineWidth = 0.4;
+  for(let x=0;x<W;x+=S(40)){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=S(40)){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Determine wire highlights
+  const activeWires = activeComp ? getHighlightedWires(activeComp) : null;
+  const activeWireIds = activeWires ? new Set(activeWires.map(w=>w.id)) : null;
+
+  // Draw all wires first (behind components)
+  WIRES.forEach(wire => {
+    if (activeTab !== 'full' && !wire.tab.includes(activeTab)) return;
+    const hl = activeWireIds === null ? null : activeWireIds.has(wire.id);
+    drawWire(wire, hl);
+  });
+
+  // Resistors
+  drawResistors();
+
+  // Draw all components
+  Object.values(COMPS).forEach(c => {
+    const hl = activeComp === null ? null : c.id === activeComp;
+    if (c.id === 'breadboard') {
+      ctx.save();
+      ctx.globalAlpha = hl === null ? 1 : hl ? 1 : 0.35;
+      drawBreadboard();
+      ctx.restore();
+    } else {
+      drawComp(c, hl);
+    }
+  });
+
+  // Pin labels on Uno
+  drawUnoPins();
+
+  // Power source decorations
+  drawPowerSources();
+
+  // Annotations
+  drawAnnotations();
+
+  // Hover wire label
+}
+
+// ── INTERACTIONS ──
+function getCompAt(mx, my) {
+  for (const c of Object.values(COMPS)) {
+    if (mx>=S(c.x) && mx<=S(c.x+c.w) && my>=SY(c.y) && my<=SY(c.y+c.h)) return c.id;
+  }
+  return null;
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const comp = getCompAt(mx, my);
+  if (comp === activeComp) { activeComp = null; setStatus('Click any component to highlight its connections'); }
+  else { activeComp = comp; if (comp) setStatus(`${COMPS[comp].label.replace('\n',' ')} — showing all connections`); }
+  draw();
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const comp = getCompAt(mx, my);
+  canvas.style.cursor = comp ? 'pointer' : 'default';
+});
+
+function setStatus(msg, on) {
+  const s = document.getElementById('mainStatus');
+  s.textContent = msg;
+  s.className = on ? 'status-bar on' : 'status-bar';
+}
+
+// ── TABS ──
+function showTab(tab) {
+  activeTab = tab;
+  activeComp = null;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const msgs = {
+    full: 'Full wiring diagram — click any component to highlight its connections',
+    power: 'Power flow only — 5V lines from adapters to components',
+    signal: 'Signal lines only — data wires between Arduino/ESP32 and sensors/outputs',
+    gnd: 'Ground connections — all GNDs must share the common breadboard rail'
+  };
+  setStatus(msgs[tab]);
+  draw();
+}
+
+// ── INIT ──
+resize();
+</script>
+</body>
+</html>

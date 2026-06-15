@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Waste Classifier — Rotating Bin 3D Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090c;--bg2:#0d1117;--bg3:#121820;--bg4:#161e28;
+  --bd:#1c2a38;--bd2:#253648;
+  --lime:#b8f000;--cyan:#00d9f5;--amber:#f5a800;
+  --green:#00d966;--blue:#1a5cff;--red:#ff2244;--purple:#cc00ff;
+  --text:#c5dcea;--text2:#5e7f96;--text3:#283d4f;
+  --mono:'Azeret Mono',monospace;--sans:'Space Grotesk',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden}
+
+/* Scanline BG */
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px);
+  pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background-image:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,217,245,.04) 0%,transparent 70%),
+  linear-gradient(rgba(28,42,56,.45) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(28,42,56,.45) 1px,transparent 1px);
+  background-size:100% 100%,44px 44px,44px 44px;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:300;
+  background:rgba(7,9,12,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:52px}
+.logo{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--lime);letter-spacing:3px}
+.navlinks{display:flex;gap:2px}
+.navlinks a{font-family:var(--mono);font-size:9px;color:var(--text2);text-decoration:none;
+  padding:5px 11px;border-radius:3px;transition:all .15s;letter-spacing:1.5px;text-transform:uppercase}
+.navlinks a:hover{color:var(--lime);background:rgba(184,240,0,.07)}
+
+/* LAYOUT */
+.wrap{position:relative;z-index:1;max-width:1140px;margin:0 auto;padding:0 24px}
+section{padding:72px 0}
+section:first-of-type{padding-top:100px}
+
+.tag{font-family:var(--mono);font-size:9px;color:var(--lime);letter-spacing:4px;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.tag::before{content:'';width:14px;height:1px;background:var(--lime)}
+.head{font-size:clamp(22px,3.5vw,38px);font-weight:700;color:#fff;line-height:1.08;margin-bottom:10px;letter-spacing:-.5px}
+.sub{font-size:15px;color:var(--text2);max-width:560px;margin-bottom:32px;line-height:1.75;font-family:var(--mono)}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:72px}
+.hero-tag{font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:5px;text-transform:uppercase;margin-bottom:18px;
+  display:flex;align-items:center;gap:10px}
+.hero-tag::before{content:'';width:24px;height:1px;background:var(--cyan)}
+.hero-h{font-size:clamp(38px,7vw,84px);font-weight:700;line-height:.92;color:#fff;margin-bottom:20px;letter-spacing:-2px}
+.hero-h span{color:var(--lime)}
+.hero-p{font-family:var(--mono);font-size:14px;color:var(--text2);max-width:500px;margin-bottom:36px;line-height:1.8}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:48px}
+.chip{font-family:var(--mono);font-size:9px;padding:4px 12px;border-radius:2px;border:1px solid;letter-spacing:1.5px;text-transform:uppercase}
+.cl{border-color:var(--lime);color:var(--lime);background:rgba(184,240,0,.05)}
+.cc{border-color:var(--cyan);color:var(--cyan);background:rgba(0,217,245,.05)}
+.ca{border-color:var(--amber);color:var(--amber);background:rgba(245,168,0,.05)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--bd);border-radius:6px;overflow:hidden;max-width:580px}
+.stat{padding:18px 14px;text-align:center;background:var(--bg2);border-right:1px solid var(--bd)}
+.stat:last-child{border-right:none}
+.sv{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--lime);display:block}
+.sl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px}
+
+/* PANELS */
+.panel{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:18px}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd);background:var(--bg3)}
+.pt{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase}
+.pb{font-family:var(--mono);font-size:8px;padding:3px 9px;border-radius:2px;letter-spacing:1.5px;text-transform:uppercase}
+.pb-l{background:rgba(184,240,0,.1);color:var(--lime);border:1px solid rgba(184,240,0,.25)}
+.pb-c{background:rgba(0,217,245,.08);color:var(--cyan);border:1px solid rgba(0,217,245,.2)}
+.pb-g{background:rgba(0,217,102,.1);color:var(--green);border:1px solid rgba(0,217,102,.25)}
+.pb-a{background:rgba(245,168,0,.1);color:var(--amber);border:1px solid rgba(245,168,0,.25)}
+
+/* CONTROLS */
+.cbar{display:flex;gap:7px;padding:12px 18px;background:var(--bg3);border-top:1px solid var(--bd);flex-wrap:wrap;align-items:center}
+.clbl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-right:4px}
+.btn{font-family:var(--mono);font-size:9px;padding:7px 14px;border-radius:3px;border:1px solid;cursor:pointer;background:transparent;
+  transition:all .15s;letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
+.bg{border-color:var(--green);color:var(--green)}.bg:hover,.bg.on{background:rgba(0,217,102,.14)}
+.ba{border-color:var(--amber);color:var(--amber)}.ba:hover,.ba.on{background:rgba(245,168,0,.14)}
+.bb{border-color:var(--blue);color:var(--blue)}.bb:hover,.bb.on{background:rgba(26,92,255,.14)}
+.bc{border-color:var(--cyan);color:var(--cyan)}.bc:hover,.bc.on{background:rgba(0,217,245,.14)}
+.bn{border-color:var(--text3);color:var(--text3)}.bn:hover{background:rgba(255,255,255,.04)}
+.bl{border-color:var(--lime);color:var(--lime)}.bl:hover{background:rgba(184,240,0,.1)}
+.sbar{font-family:var(--mono);font-size:10px;padding:8px 18px;border-top:1px solid var(--bd);
+  color:var(--text3);min-height:34px;background:var(--bg);letter-spacing:.5px}
+.sbar.on{color:var(--green)}
+
+/* LAYOUT GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:7px;padding:18px 20px}
+.card:hover{border-color:var(--bd2)}
+.cn{font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.ct{font-size:15px;font-weight:600;color:#fff;margin-bottom:6px;letter-spacing:-.3px}
+.cd{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.65}
+.tip{font-family:var(--mono);font-size:10px;color:var(--amber);margin-top:7px;padding:4px 8px;
+  background:rgba(245,168,0,.06);border-radius:2px;border-left:2px solid var(--amber)}
+
+/* STEPS */
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.step{background:var(--bg2);border:1px solid var(--bd);border-radius:7px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.sn{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--lime);min-width:28px;line-height:1}
+.stitle{font-size:14px;font-weight:600;color:#fff;margin-bottom:4px;letter-spacing:-.2px}
+.sdesc{font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.65}
+
+/* WIRE TABLE */
+.wt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+.wt td{padding:8px 12px;border-bottom:1px solid var(--bd)}
+.wt tr:last-child td{border-bottom:none}
+.wt tr:hover td{background:var(--bg3)}
+.wd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.pin{color:var(--cyan)}
+.mt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+.mt th{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);padding:9px 12px;border-bottom:1px solid var(--bd2);text-align:left}
+.mt td{padding:8px 12px;border-bottom:1px solid var(--bd)}
+.mt tr:last-child td{border-bottom:none}
+.mt tr:hover td{background:var(--bg3)}
+.dim{color:var(--lime);font-weight:700}
+
+canvas{display:block;width:100%}
+footer{position:relative;z-index:1;border-top:1px solid var(--bd);padding:24px;text-align:center;
+  font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">SWC · ROTATING BIN VISUALIZER</div>
+  <div class="navlinks">
+    <a href="#model">3D Model</a>
+    <a href="#rotation">Rotation</a>
+    <a href="#drop">Drop</a>
+    <a href="#measure">Measures</a>
+    <a href="#wiring">Wiring</a>
+    <a href="#assemble">Assembly</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+<div class="wrap">
+  <div class="hero-tag">IT 171 Final Project · Option B · ESP32-CAM + Arduino Uno</div>
+  <h1 class="hero-h">Rotating<br>Bin <span>Classifier</span></h1>
+  <p class="hero-p">The platform spins. The camera stays fixed.<br>Pure canvas 3D — no WebGL, runs everywhere.</p>
+  <div class="chips">
+    <span class="chip cl">Organic · Paper · Plastic</span>
+    <span class="chip cc">Rotating Platform</span>
+    <span class="chip ca">MG90S Servo</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="sv">3</span><span class="sl">Bins</span></div>
+    <div class="stat"><span class="sv">120°</span><span class="sl">Per Step</span></div>
+    <div class="stat"><span class="sv">30cm</span><span class="sl">Platform</span></div>
+    <div class="stat"><span class="sv">70%</span><span class="sl">Conf. Min</span></div>
+  </div>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+<div class="wrap">
+  <div class="tag">System Overview</div>
+  <h2 class="head">How the rotating bin works</h2>
+  <p class="sub">Unlike the rotating chute, everything above stays fixed. The platform below rotates to bring the correct bin directly under the fixed drop point.</p>
+  <div class="g3">
+    <div class="card"><div style="height:2px;background:var(--cyan);border-radius:1px;margin-bottom:12px"></div><div class="cn">Step 01</div><div class="ct">Object detected</div><div class="cd">HC-SR04 ultrasonic senses waste on scan tray within 10 cm. Triggers the classification pipeline.</div></div>
+    <div class="card"><div style="height:2px;background:var(--purple);border-radius:1px;margin-bottom:12px"></div><div class="cn">Step 02</div><div class="ct">ML inference on-chip</div><div class="cd">ESP32-CAM captures 96×96px image. TFLite model classifies Organic/Paper/Plastic locally. No internet.</div></div>
+    <div class="card"><div style="height:2px;background:var(--lime);border-radius:1px;margin-bottom:12px"></div><div class="cn">Step 03</div><div class="ct">Platform rotates</div><div class="cd">MG90S servo rotates the bin platform ±120° steps until the correct bin is directly under the drop point.</div></div>
+    <div class="card"><div style="height:2px;background:var(--amber);border-radius:1px;margin-bottom:12px"></div><div class="cn">Step 04</div><div class="ct">Trap door opens</div><div class="cd">Servo 2 opens both tray halves. Waste falls straight down into the aligned bin below. Door closes after 1.5s.</div></div>
+    <div class="card"><div style="height:2px;background:var(--green);border-radius:1px;margin-bottom:12px"></div><div class="cn">Step 05</div><div class="ct">Visual feedback</div><div class="cd">LED lights up (green/yellow/blue). Buzzer beeps once. LCD shows class + confidence score. Dashboard updates.</div></div>
+    <div class="card"><div style="height:2px;background:var(--red);border-radius:1px;margin-bottom:12px"></div><div class="cn">Step 06</div><div class="ct">Platform returns</div><div class="cd">Platform rotates back to home position (Organic bin default). Tray door closes. Ready for next item.</div></div>
+  </div>
+</div>
+</section>
+
+<!-- 3D ISOMETRIC MODEL -->
+<section id="model">
+<div class="wrap">
+  <div class="tag">Isometric 3D Model</div>
+  <h2 class="head">Full Build — Rotating Bin Platform</h2>
+  <p class="sub">Isometric canvas render — no WebGL. Rotate the platform by clicking the bin buttons. The scan tray and camera stay fixed while the bins below rotate.</p>
+  <div class="panel">
+    <canvas id="isoC" height="580"></canvas>
+    <div class="cbar">
+      <span class="clbl">Rotate to:</span>
+      <button class="btn bg" id="btnOrg" onclick="rotateTo('organic')">⟳ Organic</button>
+      <button class="btn ba" id="btnPap" onclick="rotateTo('paper')">⟳ Paper</button>
+      <button class="btn bb" id="btnPla" onclick="rotateTo('plastic')">⟳ Plastic</button>
+      <button class="btn bn" onclick="rotateTo('home')">⌂ Home</button>
+      <div style="flex:1"></div>
+      <button class="btn bl" onclick="toggleExplode()">⊞ Explode</button>
+      <button class="btn bc" onclick="toggleLabels()">◎ Labels</button>
+    </div>
+    <div class="sbar" id="isoStat">Click a bin button to rotate the platform</div>
+  </div>
+</div>
+</section>
+
+<!-- ROTATION TOP VIEW -->
+<section id="rotation">
+<div class="wrap">
+  <div class="tag">Mechanism 01</div>
+  <h2 class="head">Platform Rotation — Top View</h2>
+  <p class="sub">Three bins arranged 120° apart on a 30cm cardboard disc. MG90S servo rotates the disc in 120° increments. Drop point stays fixed at the center top.</p>
+  <div class="panel">
+    <canvas id="topC" height="420"></canvas>
+    <div class="cbar">
+      <button class="btn bg" onclick="topRotate('organic')">⟳ Organic — 0°</button>
+      <button class="btn ba" onclick="topRotate('paper')">⟳ Paper — 120°</button>
+      <button class="btn bb" onclick="topRotate('plastic')">⟳ Plastic — 240°</button>
+      <button class="btn bn" onclick="topRotate('home')">⌂ Reset</button>
+    </div>
+    <div class="sbar" id="topStat">Select a bin to see the platform rotate to align it under the drop point</div>
+  </div>
+</div>
+</section>
+
+<!-- DROP MECHANISM -->
+<section id="drop">
+<div class="wrap">
+  <div class="tag">Mechanism 02</div>
+  <h2 class="head">Drop Sequence — Side Cross-Section</h2>
+  <p class="sub">Platform rotates first, aligns correct bin under drop point, then trap door opens. Waste falls straight down. No timing conflict — the bin is locked in place before the door opens.</p>
+  <div class="panel">
+    <canvas id="dropC" height="520"></canvas>
+    <div class="cbar">
+      <button class="btn bg" onclick="runDrop('organic')">▶ Drop → Organic</button>
+      <button class="btn ba" onclick="runDrop('paper')">▶ Drop → Paper</button>
+      <button class="btn bb" onclick="runDrop('plastic')">▶ Drop → Plastic</button>
+      <button class="btn bn" onclick="resetDrop()">↺ Reset</button>
+    </div>
+    <div class="sbar" id="dropStat">Select a bin to watch the full drop sequence</div>
+  </div>
+</div>
+</section>
+
+<!-- MEASUREMENTS -->
+<section id="measure">
+<div class="wrap">
+  <div class="tag">Cardboard Build</div>
+  <h2 class="head">Dimensions & Measurements</h2>
+  <p class="sub">All measurements in centimeters. The platform disc is the most critical piece — cut it from double-layer cardboard for rigidity and balance it before mounting.</p>
+  <div class="g2" style="align-items:start">
+    <div class="panel" style="margin-bottom:0">
+      <div class="ph"><div class="pt">Front + Top View</div><div class="pb pb-c">Dims in CM</div></div>
+      <canvas id="measC" height="500"></canvas>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="ph"><div class="pt">Cardboard Cut List</div><div class="pb pb-g">Option B Build</div></div>
+        <div style="padding:0">
+          <table class="mt">
+            <tr><th>Part</th><th>Size (cm)</th><th>Qty</th></tr>
+            <tr><td style="color:#fff">Base platform</td><td class="dim">40 × 30</td><td style="color:var(--text2)">×2 layers</td></tr>
+            <tr><td style="color:#fff">Rotating disc</td><td class="dim">30cm diameter</td><td style="color:var(--text2)">×2 layers</td></tr>
+            <tr><td style="color:#fff">Tower sides</td><td class="dim">35 × 8</td><td style="color:var(--text2)">×2</td></tr>
+            <tr><td style="color:#fff">Tower front/back</td><td class="dim">35 × 8</td><td style="color:var(--text2)">×2</td></tr>
+            <tr><td style="color:#fff">Tower top/bottom</td><td class="dim">8 × 8</td><td style="color:var(--text2)">×2</td></tr>
+            <tr><td style="color:#fff">Camera roof plate</td><td class="dim">12 × 12</td><td style="color:var(--text2)">×1</td></tr>
+            <tr><td style="color:#fff">Scan tray base</td><td class="dim">10 × 10</td><td style="color:var(--text2)">×1</td></tr>
+            <tr><td style="color:#fff">Scan tray walls</td><td class="dim">10 × 2</td><td style="color:var(--text2)">×4</td></tr>
+            <tr><td style="color:#fff">Trap door halves</td><td class="dim">5 × 10</td><td style="color:var(--text2)">×2</td></tr>
+            <tr><td style="color:#fff">Center hub (circle)</td><td class="dim">6cm diameter</td><td style="color:var(--text2)">×1</td></tr>
+            <tr><td style="color:#fff">Bin walls (per bin)</td><td class="dim">10 × 15</td><td style="color:var(--text2)">×4 × 3 bins</td></tr>
+            <tr><td style="color:#fff">Bin bottoms</td><td class="dim">10 × 10</td><td style="color:var(--text2)">×3</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- WIRING -->
+<section id="wiring">
+<div class="wrap">
+  <div class="tag">Electronics</div>
+  <h2 class="head">Wiring Reference</h2>
+  <p class="sub">Option B uses MG90S instead of SG90 for Servo 1 — the rotating disc is heavier than a chute arm. All other components remain the same as Option A.</p>
+  <div class="g2">
+    <div class="card">
+      <div style="height:2px;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:1px;margin-bottom:14px"></div>
+      <div class="cn">Arduino Uno — Pin Map</div>
+      <table class="wt">
+        <tr><td><span class="wd" style="background:#ff2244"></span>Servo 1 — Disc rotation (MG90S)</td><td class="pin">D9</td></tr>
+        <tr><td><span class="wd" style="background:#ff6600"></span>Servo 2 — Trap door (SG90)</td><td class="pin">D10</td></tr>
+        <tr><td><span class="wd" style="background:#1a5cff"></span>Ultrasonic TRIG</td><td class="pin">D6</td></tr>
+        <tr><td><span class="wd" style="background:#4488ff"></span>Ultrasonic ECHO</td><td class="pin">D7</td></tr>
+        <tr><td><span class="wd" style="background:#00b050"></span>LCD SDA (I2C)</td><td class="pin">A4</td></tr>
+        <tr><td><span class="wd" style="background:#00d966"></span>LCD SCL (I2C)</td><td class="pin">A5</td></tr>
+        <tr><td><span class="wd" style="background:#f5a800"></span>Buzzer</td><td class="pin">D8</td></tr>
+        <tr><td><span class="wd" style="background:#00d966"></span>LED Organic (green)</td><td class="pin">D3 + 220Ω</td></tr>
+        <tr><td><span class="wd" style="background:#f5a800"></span>LED Paper (yellow)</td><td class="pin">D4 + 220Ω</td></tr>
+        <tr><td><span class="wd" style="background:#1a5cff"></span>LED Plastic (blue)</td><td class="pin">D5 + 220Ω</td></tr>
+        <tr><td><span class="wd" style="background:#aaa"></span>ESP32-CAM TX → Uno RX</td><td class="pin">D0</td></tr>
+        <tr><td><span class="wd" style="background:#777"></span>ESP32-CAM RX ← Uno TX</td><td class="pin">D1</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <div style="height:2px;background:linear-gradient(90deg,var(--lime),var(--green));border-radius:1px;margin-bottom:14px"></div>
+        <div class="cn">ESP32-CAM + Servo Notes</div>
+        <table class="wt">
+          <tr><td><span class="wd" style="background:#ff2244"></span>Power via MB board</td><td class="pin">5V pin</td></tr>
+          <tr><td><span class="wd" style="background:#333;border:1px solid #444"></span>Ground</td><td class="pin">GND pin</td></tr>
+          <tr><td><span class="wd" style="background:#aaa"></span>TX → Arduino D0</td><td class="pin">GPIO1</td></tr>
+          <tr><td><span class="wd" style="background:#777"></span>RX ← Arduino D1</td><td class="pin">GPIO3</td></tr>
+        </table>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:11px;line-height:2">
+          <div style="color:var(--red)">⚠ Use MG90S (not SG90) for disc — heavier load</div>
+          <div style="color:var(--amber)">⚠ Disc servo needs dedicated 5V 2A supply</div>
+          <div style="color:var(--amber)">⚠ Balance the disc before mounting servo</div>
+          <div style="color:var(--text3)">⚠ GPIO12 LOW at boot on ESP32-CAM</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cn">Platform Rotation Code</div>
+        <pre style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.9;background:var(--bg);padding:13px;border-radius:4px;border:1px solid var(--bd);overflow-x:auto"><span style="color:var(--text3)">// Home position = Organic under drop</span>
+<span style="color:var(--text3)">// 120° per bin step</span>
+
+<span style="color:var(--lime)">void</span> rotateToBin(<span style="color:var(--cyan)">String</span> cls) {
+  <span style="color:var(--text3)">// Rotate platform first</span>
+  <span style="color:var(--lime)">if</span> (cls == <span style="color:var(--green)">"ORGANIC"</span>)  discAngle = <span style="color:var(--amber)">0</span>;
+  <span style="color:var(--lime)">if</span> (cls == <span style="color:var(--green)">"PAPER"</span>)    discAngle = <span style="color:var(--amber)">120</span>;
+  <span style="color:var(--lime)">if</span> (cls == <span style="color:var(--green)">"PLASTIC"</span>)  discAngle = <span style="color:var(--amber)">240</span>;
+  servo1.write(discAngle);
+  delay(<span style="color:var(--amber)">600</span>); <span style="color:var(--text3)">// Wait for disc to settle</span>
+
+  <span style="color:var(--text3)">// THEN open trap door</span>
+  servo2.write(<span style="color:var(--red)">90</span>);  <span style="color:var(--text3)">// Open</span>
+  delay(<span style="color:var(--amber)">1500</span>);
+  servo2.write(<span style="color:var(--red)">0</span>);   <span style="color:var(--text3)">// Close</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ASSEMBLY -->
+<section id="assemble">
+<div class="wrap">
+  <div class="tag">Build Guide</div>
+  <h2 class="head">Step-by-Step Assembly</h2>
+  <p class="sub">Build the rotating disc mechanism first — it's the hardest part. Get it balanced and rotating smoothly before mounting any electronics.</p>
+  <div class="steps">
+    <div class="step"><div class="sn">01</div><div><div class="stitle">Cut all cardboard pieces</div><div class="sdesc">Cut per measurements list. For the rotating disc, trace a 30cm circle (use a compass or a 15cm string). Double-layer the disc and base for strength.</div><div class="tip">Score fold lines with box cutter against a metal ruler</div></div></div>
+    <div class="step"><div class="sn">02</div><div><div class="stitle">Build base platform</div><div class="sdesc">Glue two 40×30cm sheets together. Mark the center of the disc zone (15cm from front, 15cm from left). This is where the hub will sit.</div></div></div>
+    <div class="step"><div class="sn">03</div><div><div class="stitle">Cut & layer the rotating disc</div><div class="sdesc">Cut two 30cm circles. Glue together. Find the exact center — poke a small hole with a compass point. Mount center hub (6cm disc) on top. This is your rotating platform.</div><div class="tip">Balance test: rest disc flat on a pencil tip at center. Should not tip. Trim heavy side if needed.</div></div></div>
+    <div class="step"><div class="sn">04</div><div><div class="stitle">Mount MG90S servo + hub</div><div class="sdesc">Hot glue MG90S servo to base, pointing up through center hole. Attach servo horn to underside of disc center hub. Test rotation: servo at 0°, 120°, 240° = Organic, Paper, Plastic positions.</div><div class="tip">Use servo tester or simple Arduino sketch to verify all 3 stop angles before gluing</div></div></div>
+    <div class="step"><div class="sn">05</div><div><div class="stitle">Build 3 bins on the disc</div><div class="sdesc">Build three 10×15cm bins (no tops). Arrange them 120° apart on the rotating disc, equally spaced around the center hub. Each bin must clear the drop point as the disc rotates.</div><div class="tip">Drop test: rotate disc manually through all 3 positions and verify each bin opening aligns under the center drop point</div></div></div>
+    <div class="step"><div class="sn">06</div><div><div class="stitle">Build electronics tower</div><div class="sdesc">Assemble tower box (8×35×8cm) at back-right of base. Cut holes for LCD (front face), 3 LEDs, and wire routing. Mount Arduino Uno and LCD inside. Route all wires to bottom.</div></div></div>
+    <div class="step"><div class="sn">07</div><div><div class="stitle">Build scan tray + trap door</div><div class="sdesc">Build 10×10cm tray with 2cm walls directly above the disc center drop point. Cut tray floor into two 5×10 halves. Attach each with a tape hinge — they open downward. Mount SG90 Servo 2 on side wall.</div><div class="tip">Tape hinge: fold 15cm packing tape over each edge. Strong and flexible.</div></div></div>
+    <div class="step"><div class="sn">08</div><div><div class="stitle">Mount camera assembly</div><div class="sdesc">Mount vertical pole from base beside tower. Run horizontal arm over scan tray. Mount ESP32-CAM on roof plate facing straight down. Use phone spirit level to verify vertical. Mount HC-SR04 beside it.</div><div class="tip">Camera must be perfectly vertical — any angle kills classification accuracy</div></div></div>
+    <div class="step"><div class="sn">09</div><div><div class="stitle">Wire everything</div><div class="sdesc">Connect all pins per wiring table. Common GND rail for all components. Run MG90S servo on dedicated 5V 2A supply — disc is heavy, brownout risk if powered from Uno.</div></div></div>
+    <div class="step"><div class="sn">10</div><div><div class="stitle">Test disc, then flash model</div><div class="sdesc">Test disc rotation first — check each bin aligns perfectly at 0°/120°/240°. Then flash Edge Impulse model to ESP32-CAM. Run full classification test. Calibrate servo angles to exact bin positions.</div><div class="tip">Take 60+ images per class under the same lighting you'll use during the demo</div></div></div>
+  </div>
+</div>
+</section>
+
+<footer>Smart Waste Classifier · IT 171 Final Project · Option B · Rotating Bin Platform · ESP32-CAM + Arduino Uno · Edge Impulse TFLite</footer>
+
+<script>
+// ═══════════════════════════════════════
+// SHARED UTILITIES
+// ═══════════════════════════════════════
+const BIN_COLORS = { organic:'#00d966', paper:'#f5a800', plastic:'#1a5cff' };
+const BIN_ANGLES_ISO = { organic: 0, paper: 2*Math.PI/3, plastic: 4*Math.PI/3, home: 0 };
+const BIN_LABELS = { organic:'ORGANIC', paper:'PAPER', plastic:'PLASTIC' };
+const BIN_SERVO  = { organic:'0°', paper:'120°', plastic:'240°' };
+
+function mkCanvas(id) {
+  const c = document.getElementById(id);
+  c.width = c.clientWidth; return c;
+}
+
+// ═══════════════════════════════════════
+// ISO 3D MODEL
+// ═══════════════════════════════════════
+const isoC = document.getElementById('isoC');
+const ictx = isoC.getContext('2d');
+let discAngle = 0, discTarget = 0;
+let exploded = false, showLabels = true;
+let isoRaf;
+
+function resizeIso() {
+  isoC.width = isoC.clientWidth;
+}
+new ResizeObserver(resizeIso).observe(isoC);
+resizeIso();
+
+// Isometric helpers
+function isoProject(x, y, z, cx, cy, sc) {
+  const a = Math.PI / 6;
+  return [cx + (x - z) * Math.cos(a) * sc, cy - ((x + z) * Math.sin(a) + y) * sc];
+}
+
+function drawFace(ctx, pts, fill, stroke, lw) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = stroke; ctx.lineWidth = lw || 0.7; ctx.stroke();
+}
+
+function isoBox(ctx, cx, cy, sc, x, y, z, w, h, d, top, right, left, ec) {
+  const p = (px,py,pz) => isoProject(px,py,pz,cx,cy,sc);
+  drawFace(ctx,[p(x,y+h,z),p(x+w,y+h,z),p(x+w,y+h,z+d),p(x,y+h,z+d)],top,ec||'#0008');
+  drawFace(ctx,[p(x+w,y,z),p(x+w,y+h,z),p(x+w,y+h,z+d),p(x+w,y,z+d)],right,ec||'#0008');
+  drawFace(ctx,[p(x,y,z+d),p(x+w,y,z+d),p(x+w,y+h,z+d),p(x,y+h,z+d)],left,ec||'#0008');
+}
+
+function isoCyl(ctx, cx, cy, sc, x, y, z, r, h, col, ec) {
+  // approximate cylinder as hex prism
+  const segs = 10;
+  const p = (px,py,pz) => isoProject(px,py,pz,cx,cy,sc);
+  // top ellipse
+  const pts = [];
+  for (let i = 0; i < segs; i++) {
+    const a = (i/segs)*Math.PI*2;
+    pts.push(p(x+Math.cos(a)*r, y+h, z+Math.sin(a)*r));
+  }
+  ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  pts.forEach(pt => ctx.lineTo(pt[0],pt[1]));
+  ctx.closePath(); ctx.fillStyle=col; ctx.fill(); ctx.strokeStyle=ec||'#0006'; ctx.lineWidth=0.7; ctx.stroke();
+  // side (simplified — just front half)
+  for (let i = 0; i < segs; i++) {
+    const a1=(i/segs)*Math.PI*2, a2=((i+1)/segs)*Math.PI*2;
+    if (Math.sin(a1) > -0.2) {
+      const p1=p(x+Math.cos(a1)*r,y+h,z+Math.sin(a1)*r);
+      const p2=p(x+Math.cos(a2)*r,y+h,z+Math.sin(a2)*r);
+      const p3=p(x+Math.cos(a2)*r,y,z+Math.sin(a2)*r);
+      const p4=p(x+Math.cos(a1)*r,y,z+Math.sin(a1)*r);
+      const shade = (Math.cos(a1)*0.3+0.7);
+      const rgb = col.startsWith('#')?hexToRgb(col):{r:100,g:100,b:100};
+      drawFace(ctx,[p1,p2,p3,p4],`rgba(${Math.floor(rgb.r*shade)},${Math.floor(rgb.g*shade)},${Math.floor(rgb.b*shade)},0.9)`,ec||'#0006');
+    }
+  }
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return{r,g,b};
+}
+
+function isoText(ctx, cx, cy, sc, x, y, z, text, col, size) {
+  const [px,py] = isoProject(x,y,z,cx,cy,sc);
+  ctx.fillStyle=col; ctx.font=`${size||Math.max(8,sc*0.55)}px Azeret Mono`;
+  ctx.textAlign='center'; ctx.fillText(text,px,py+3);
+}
+
+function isoLabel(ctx, cx, cy, sc, x, y, z, text, col) {
+  if (!showLabels) return;
+  const [px,py] = isoProject(x,y,z,cx,cy,sc);
+  ctx.font=`bold ${Math.max(7,sc*0.5)}px Azeret Mono`;
+  const tw = ctx.measureText(text).width;
+  ctx.fillStyle='rgba(7,9,12,.85)'; ctx.beginPath();
+  ctx.roundRect(px-tw/2-5,py-9,tw+10,16,2); ctx.fill();
+  ctx.strokeStyle=col+'44'; ctx.lineWidth=0.8; ctx.stroke();
+  ctx.fillStyle=col; ctx.textAlign='center'; ctx.fillText(text,px,py+3);
+}
+
+function drawIso() {
+  const W=isoC.width, H=isoC.height;
+  ictx.clearRect(0,0,W,H);
+  ictx.fillStyle='#0d1117'; ictx.fillRect(0,0,W,H);
+  // Grid
+  ictx.strokeStyle='#141e28'; ictx.lineWidth=0.4;
+  for(let x=0;x<W;x+=36){ictx.beginPath();ictx.moveTo(x,0);ictx.lineTo(x,H);ictx.stroke();}
+  for(let y=0;y<H;y+=36){ictx.beginPath();ictx.moveTo(0,y);ictx.lineTo(W,y);ictx.stroke();}
+
+  const cx = W*0.46, cy = H*0.72;
+  const sc = Math.min(W/20, H/17) * 0.75;
+  const p = (x,y,z) => isoProject(x,y,z,cx,cy,sc);
+  const box = (x,y,z,w,h,d,t,r,l,e) => isoBox(ictx,cx,cy,sc,x,y,z,w,h,d,t,r,l,e);
+  const txt = (x,y,z,s,c,sz) => isoText(ictx,cx,cy,sc,x,y,z,s,c,sz);
+  const lbl = (x,y,z,s,c) => isoLabel(ictx,cx,cy,sc,x,y,z,s,c);
+
+  // Explode offsets
+  const ep = exploded ? 2.5 : 0;
+
+  // BASE
+  box(-5,-0.35,-4,10,0.35,9,'#2a1c08','#1e140a','#221806','#6a441244');
+
+  // ROTATING DISC (circle approximation using many thin boxes)
+  const discR = 4.2, discY = 0, discH = 0.28;
+  const discSegs = 24;
+  ictx.save();
+  // Draw disc top as ellipse
+  const discTopPts = [];
+  for (let i=0;i<discSegs;i++) {
+    const a = (i/discSegs)*Math.PI*2;
+    discTopPts.push(p(Math.cos(a)*discR, discY+discH, Math.sin(a)*discR));
+  }
+  ictx.beginPath(); ictx.moveTo(discTopPts[0][0],discTopPts[0][1]);
+  discTopPts.forEach(pt=>ictx.lineTo(pt[0],pt[1]));
+  ictx.closePath(); ictx.fillStyle='#1a2a14'; ictx.fill();
+  ictx.strokeStyle='rgba(184,240,0,.25)'; ictx.lineWidth=1.5; ictx.stroke();
+
+  // Disc rim segments (visible front half)
+  for (let i=0;i<discSegs;i++) {
+    const a1=(i/discSegs)*Math.PI*2, a2=((i+1)/discSegs)*Math.PI*2;
+    if (Math.sin((a1+a2)/2)>-0.1) {
+      const p1=p(Math.cos(a1)*discR,discY+discH,Math.sin(a1)*discR);
+      const p2=p(Math.cos(a2)*discR,discY+discH,Math.sin(a2)*discR);
+      const p3=p(Math.cos(a2)*discR,discY,Math.sin(a2)*discR);
+      const p4=p(Math.cos(a1)*discR,discY,Math.sin(a1)*discR);
+      const shade = 0.5+Math.cos((a1+a2)/2)*0.3;
+      ictx.beginPath(); ictx.moveTo(p1[0],p1[1]); ictx.lineTo(p2[0],p2[1]); ictx.lineTo(p3[0],p3[1]); ictx.lineTo(p4[0],p4[1]); ictx.closePath();
+      ictx.fillStyle=`rgba(20,40,12,${shade})`; ictx.fill();
+      ictx.strokeStyle='rgba(184,240,0,.15)'; ictx.lineWidth=0.5; ictx.stroke();
+    }
+  }
+  ictx.restore();
+
+  // Center hub on disc
+  const hubPts=[];
+  for(let i=0;i<12;i++){const a=(i/12)*Math.PI*2; hubPts.push(p(Math.cos(a)*0.6,discH+0.3,Math.sin(a)*0.6));}
+  ictx.beginPath(); ictx.moveTo(hubPts[0][0],hubPts[0][1]);
+  hubPts.forEach(pt=>ictx.lineTo(pt[0],pt[1]));
+  ictx.closePath(); ictx.fillStyle='#1a2d3a'; ictx.fill(); ictx.strokeStyle='#00d9f5'; ictx.lineWidth=1; ictx.stroke();
+
+  // THREE BINS on disc (rotated by discAngle)
+  const binOffsets = [0, 2*Math.PI/3, 4*Math.PI/3];
+  const binR = 2.6;
+  const binCols = [
+    {t:'#081a08',r:'#041004',l:'#061408',e:'#00d96644',lc:'#00d966',n:'ORGANIC'},
+    {t:'#1a1200',r:'#120e00',l:'#161000',e:'#f5a80044',lc:'#f5a800',n:'PAPER'},
+    {t:'#080d1a',r:'#040814',l:'#060a16',e:'#1a5cff44',lc:'#1a5cff',n:'PLASTIC'},
+  ];
+  binOffsets.forEach((baseA, i) => {
+    const a = baseA + discAngle;
+    const bx = Math.cos(a)*binR - 1.1;
+    const bz = Math.sin(a)*binR - 1.1;
+    const by = exploded ? ep*1.2 : 0;
+    const c = binCols[i];
+
+    // Bin box (2.2 wide, 3 tall, 2.2 deep)
+    box(bx, discH+by, bz, 2.2, 3, 2.2, c.t, c.r, c.l, c.e);
+    txt(bx+1.1, discH+by+1.8, bz+1.1, c.n, c.lc, Math.max(6,sc*0.48));
+
+    // Color indicator on bin top
+    const binTopPts = [p(bx,discH+by+3,bz),p(bx+2.2,discH+by+3,bz),p(bx+2.2,discH+by+3,bz+2.2),p(bx,discH+by+3,bz+2.2)];
+    ictx.beginPath(); ictx.moveTo(binTopPts[0][0],binTopPts[0][1]);
+    binTopPts.forEach(pt=>ictx.lineTo(pt[0],pt[1]));
+    ictx.closePath(); ictx.fillStyle=c.lc+'33'; ictx.fill(); ictx.strokeStyle=c.lc+'88'; ictx.lineWidth=1.2; ictx.stroke();
+  });
+
+  // DROP POINT indicator (fixed)
+  const dpPts=[p(-0.5,discH+3.2,-0.5),p(0.5,discH+3.2,-0.5),p(0.5,discH+3.2,0.5),p(-0.5,discH+3.2,0.5)];
+  ictx.beginPath(); ictx.moveTo(dpPts[0][0],dpPts[0][1]);
+  dpPts.forEach(pt=>ictx.lineTo(pt[0],pt[1]));
+  ictx.closePath(); ictx.fillStyle='rgba(0,217,245,.12)'; ictx.fill();
+  ictx.strokeStyle='rgba(0,217,245,.5)'; ictx.lineWidth=1.2; ictx.setLineDash([4,3]); ictx.stroke(); ictx.setLineDash([]);
+
+  // TOWER (back right)
+  const tY = exploded ? ep : 0;
+  box(3.5, tY, -4.5, 1.8, 7.5, 1.8, '#0c1420','#08101a','#0a121e','#2a3f5588');
+  // Arduino
+  box(3.65,tY+4.2,-4.45,1.4,0.5,0.12,'#003300','#002800','#002e00','#00d96655');
+  txt(4.45,tY+4.55,-4.38,'UNO','#00d966',Math.max(6,sc*0.45));
+  // LCD
+  box(3.65,tY+3.4,-4.45,1.4,0.35,0.1,'#001020','#000c18','#000e1a','#00d9f555');
+  txt(4.45,tY+3.62,-4.4,'LCD','#00d9f5',Math.max(6,sc*0.42));
+  // LEDs on tower
+  [[3.7,tY+2.9,'#00d966'],[4.1,tY+2.9,'#f5a800'],[4.5,tY+2.9,'#1a5cff']].forEach(([lx,ly,lc])=>{
+    const lpts=[p(lx,ly,-4.38),p(lx+0.25,ly,-4.38),p(lx+0.25,ly,-4.28),p(lx,ly,-4.28)];
+    ictx.beginPath(); ictx.moveTo(lpts[0][0],lpts[0][1]); lpts.forEach(pt=>ictx.lineTo(pt[0],pt[1]));
+    ictx.closePath(); ictx.fillStyle=lc; ictx.fill();
+  });
+
+  // CAMERA POLE (back left)
+  const pY = exploded ? ep*0.7 : 0;
+  box(-1.15, pY, -1.15, 0.18, 7.8, 0.18, '#1a2838','#12202e','#162432','#2a3f5588');
+
+  // CAMERA ARM
+  const aY = exploded ? pY + ep*0.5 : 0;
+  box(-1.1, 7.8+aY, -1.1, 0.16, 0.16, 2.8, '#1a2838','#12202e','#162432','#2a3f5588');
+
+  // CAMERA ROOF
+  box(-1.8, 7.96+aY, 0.2, 2.2, 0.2, 1.8, '#2a1c08','#1e1408','#221806','#6a4412');
+
+  // ESP32-CAM
+  const camY2 = 8.16 + aY + (exploded?ep*0.3:0);
+  box(-1.6, camY2, 0.4, 1.8, 0.42, 1.4, '#081a0c','#041408','#06180a','#00d96666');
+  txt(-0.7, camY2+0.3, 1.1, 'ESP32-CAM','#00d966',Math.max(6,sc*0.48));
+
+  // Ultrasonic
+  box(-1.6, camY2, -0.3, 1.0, 0.32, 0.7, '#1a1200','#100e00','#141000','#f5a80066');
+  txt(-1.1, camY2+0.2, 0.05, 'HC-SR04','#f5a800',Math.max(6,sc*0.42));
+
+  // SCAN TRAY walls
+  const stY = 7.62 + aY * 0.8;
+  box(-1.6, stY, 0.3, 0.12, 0.55, 2.0, '#141e2a','#0e1822','#121a26','#2e456088');
+  box(0.35, stY, 0.3, 0.12, 0.55, 2.0, '#141e2a','#0e1822','#121a26','#2e456088');
+  box(-1.6, stY, 0.3, 2.07, 0.55, 0.12, '#141e2a','#0e1822','#121a26','#2e456088');
+  box(-1.6, stY, 2.18, 2.07, 0.55, 0.12, '#141e2a','#0e1822','#121a26','#2e456088');
+
+  // TRAP DOOR halves
+  box(-1.6, stY-0.08, 0.35, 1.0, 0.1, 1.9, '#005577','#003d55','#004466','#00d9f577');
+  box(-0.6, stY-0.08, 0.35, 1.0, 0.1, 1.9, '#005577','#003d55','#004466','#00d9f577');
+
+  // SERVO (MG90S for disc)
+  box(-0.55, -0.35, -0.55, 0.7, 0.5, 0.9, '#1a1a2e','#12122a','#141428','#8888ff55');
+  txt(0, 0.1, -0.1, 'MG90S','#8888ff',Math.max(6,sc*0.42));
+
+  // LABELS
+  lbl(-3.5,5,0,'ORGANIC BIN','#00d966');
+  lbl(1.2,5,1.5,'PAPER BIN','#f5a800');
+  lbl(-0.5,5,4,'PLASTIC BIN','#1a5cff');
+  lbl(4.4,8.5,-3.5,'TOWER · ARDUINO','#00d9f5');
+  lbl(-0.7,9.0,1.1,'ESP32-CAM','#00d966');
+  lbl(-0.6,8.1,1.3,'SCAN TRAY · TRAP DOOR','#00d9f5');
+  lbl(0,1.2,-0.1,'ROTATING DISC · 30cm','#b8f000');
+  lbl(0,0.6,0,'MG90S SERVO','#8888ff');
+
+  // Rotation angle indicator
+  ictx.save();
+  ictx.fillStyle='var(--text2)';
+  const deg = Math.round(discAngle*(180/Math.PI))%360;
+  ictx.font=`bold ${Math.max(9,sc*0.55)}px Azeret Mono`;
+  ictx.fillStyle='#00d9f5';
+  ictx.textAlign='left';
+  ictx.fillText(`DISC: ${Math.abs(deg)}°`, 14, H-14);
+  ictx.restore();
+}
+
+function isoLoop() {
+  discAngle += (discTarget - discAngle) * 0.06;
+  drawIso();
+  isoRaf = requestAnimationFrame(isoLoop);
+}
+isoLoop();
+
+const binTargets = { organic:0, paper:2*Math.PI/3, plastic:4*Math.PI/3, home:0 };
+const binMsgs = {
+  organic:'→ Platform rotating to 0° — ORGANIC bin aligns under drop point',
+  paper:'→ Platform rotating to 120° — PAPER bin aligns under drop point',
+  plastic:'→ Platform rotating to 240° — PLASTIC bin aligns under drop point',
+  home:'↺ Platform returning to home position (Organic)'
+};
+function rotateTo(cls) {
+  discTarget = binTargets[cls];
+  const s=document.getElementById('isoStat');
+  s.textContent=binMsgs[cls]; s.className='sbar on';
+  setTimeout(()=>s.className='sbar',3500);
+  ['btnOrg','btnPap','btnPla'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  if(cls==='organic') document.getElementById('btnOrg').classList.add('on');
+  if(cls==='paper') document.getElementById('btnPap').classList.add('on');
+  if(cls==='plastic') document.getElementById('btnPla').classList.add('on');
+  // Sync top view
+  topTarget = -binTargets[cls];
+}
+function toggleExplode() { exploded=!exploded; const s=document.getElementById('isoStat'); s.textContent=exploded?'EXPLODED VIEW — All parts separated':'Normal view restored'; s.className='sbar on'; setTimeout(()=>s.className='sbar',2500); }
+function toggleLabels() { showLabels=!showLabels; }
+
+// ═══════════════════════════════════════
+// TOP-DOWN ROTATION VIEW
+// ═══════════════════════════════════════
+const topC = document.getElementById('topC');
+const tctx = topC.getContext('2d');
+let topAngle = 0, topTarget = 0, topRaf;
+
+function resizeTop() { topC.width=topC.clientWidth; }
+new ResizeObserver(resizeTop).observe(topC);
+resizeTop();
+
+function drawTop() {
+  const W=topC.width, H=topC.height;
+  tctx.clearRect(0,0,W,H);
+  tctx.fillStyle='#0d1117'; tctx.fillRect(0,0,W,H);
+  tctx.strokeStyle='#141e28'; tctx.lineWidth=0.4;
+  for(let x=0;x<W;x+=32){tctx.beginPath();tctx.moveTo(x,0);tctx.lineTo(x,H);tctx.stroke();}
+  for(let y=0;y<H;y+=32){tctx.beginPath();tctx.moveTo(0,y);tctx.lineTo(W,y);tctx.stroke();}
+
+  const cx=W/2, cy=H/2;
+  const R=Math.min(W,H)*0.36;
+
+  // Drop point (fixed, always at top)
+  tctx.fillStyle='rgba(0,217,245,.1)'; tctx.strokeStyle='rgba(0,217,245,.6)'; tctx.lineWidth=2;
+  tctx.setLineDash([5,4]);
+  tctx.beginPath(); tctx.arc(cx, cy-R*0.32, R*0.14, 0, Math.PI*2); tctx.fill(); tctx.stroke();
+  tctx.setLineDash([]);
+  tctx.fillStyle='#00d9f5'; tctx.font='bold 10px Azeret Mono'; tctx.textAlign='center';
+  tctx.fillText('DROP', cx, cy-R*0.32-3);
+  tctx.fillText('POINT', cx, cy-R*0.32+10);
+
+  // ROTATING DISC circle
+  tctx.fillStyle='rgba(184,240,0,.05)'; tctx.strokeStyle='rgba(184,240,0,.3)'; tctx.lineWidth=2;
+  tctx.beginPath(); tctx.arc(cx,cy,R,0,Math.PI*2); tctx.fill(); tctx.stroke();
+
+  // Disc rotation marks (3 spokes)
+  for (let i=0;i<3;i++) {
+    const a=topAngle+i*2*Math.PI/3;
+    tctx.strokeStyle='rgba(184,240,0,.15)'; tctx.lineWidth=1;
+    tctx.beginPath(); tctx.moveTo(cx,cy); tctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R); tctx.stroke();
+  }
+
+  // Center hub
+  tctx.fillStyle='#0d1117'; tctx.strokeStyle='#00d9f5'; tctx.lineWidth=2;
+  tctx.beginPath(); tctx.arc(cx,cy,R*0.1,0,Math.PI*2); tctx.fill(); tctx.stroke();
+  tctx.fillStyle='#00d9f5';
+  tctx.beginPath(); tctx.arc(cx,cy,R*0.035,0,Math.PI*2); tctx.fill();
+
+  // THREE BINS on disc
+  const binDefs = [
+    { key:'organic', baseA:0, col:'#00d966' },
+    { key:'paper',   baseA:2*Math.PI/3, col:'#f5a800' },
+    { key:'plastic', baseA:4*Math.PI/3, col:'#1a5cff' },
+  ];
+
+  binDefs.forEach(bin => {
+    const a = bin.baseA + topAngle;
+    const bx = cx + Math.cos(a)*R*0.62;
+    const by = cy + Math.sin(a)*R*0.62;
+    const binW = R*0.32;
+
+    // Is this bin aligned with drop point?
+    const alignedAngle = -Math.PI/2; // top = drop point
+    const diff = Math.abs(((a % (Math.PI*2)) + Math.PI*2) % (Math.PI*2) - ((alignedAngle+Math.PI*4)%(Math.PI*2)));
+    const isAligned = diff < 0.18 || diff > Math.PI*2-0.18;
+
+    tctx.fillStyle = isAligned ? bin.col+'30' : bin.col+'0f';
+    tctx.strokeStyle = isAligned ? bin.col : bin.col+'55';
+    tctx.lineWidth = isAligned ? 2.5 : 1.2;
+    tctx.beginPath(); tctx.arc(bx,by,binW/2,0,Math.PI*2); tctx.fill(); tctx.stroke();
+
+    tctx.fillStyle=bin.col; tctx.font=`bold ${Math.min(11,R*0.095)}px Azeret Mono`; tctx.textAlign='center';
+    tctx.fillText(bin.key.toUpperCase(),bx,by-4);
+    tctx.fillStyle=bin.col+'99'; tctx.font=`${Math.min(9,R*0.075)}px Azeret Mono`;
+    tctx.fillText(BIN_SERVO[bin.key],bx,by+10);
+
+    // Alignment indicator
+    if (isAligned) {
+      tctx.strokeStyle=bin.col; tctx.lineWidth=1.5; tctx.setLineDash([5,4]);
+      tctx.beginPath(); tctx.moveTo(bx,by); tctx.lineTo(cx,cy-R*0.32); tctx.stroke();
+      tctx.setLineDash([]);
+      tctx.fillStyle='#0d1117'; tctx.fillRect(bx+binW/2+4,by-10,88,20);
+      tctx.strokeStyle=bin.col+'55'; tctx.lineWidth=1; tctx.strokeRect(bx+binW/2+4,by-10,88,20);
+      tctx.fillStyle=bin.col; tctx.font='bold 9px Azeret Mono'; tctx.textAlign='left';
+      tctx.fillText('✓ ALIGNED',bx+binW/2+8,by+3);
+    }
+  });
+
+  // Rotation angle display
+  const deg = Math.round((-topAngle*(180/Math.PI))%360+360)%360;
+  tctx.fillStyle='#0d1117'; tctx.fillRect(14,H-36,160,22);
+  tctx.strokeStyle='#1c2a38'; tctx.lineWidth=1; tctx.strokeRect(14,H-36,160,22);
+  tctx.fillStyle='#b8f000'; tctx.font='bold 10px Azeret Mono'; tctx.textAlign='left';
+  tctx.fillText(`DISC ANGLE: ${deg}°`, 20, H-21);
+
+  // Dimension: 30cm disc
+  tctx.strokeStyle='#253648'; tctx.lineWidth=0.8;
+  tctx.beginPath(); tctx.moveTo(cx-R,cy+R+20); tctx.lineTo(cx+R,cy+R+20); tctx.stroke();
+  tctx.beginPath(); tctx.moveTo(cx-R,cy+R+15); tctx.lineTo(cx-R,cy+R+25); tctx.stroke();
+  tctx.beginPath(); tctx.moveTo(cx+R,cy+R+15); tctx.lineTo(cx+R,cy+R+25); tctx.stroke();
+  tctx.fillStyle='#b8f000'; tctx.font='bold 10px Azeret Mono'; tctx.textAlign='center';
+  tctx.fillText('← 30 cm diameter →', cx, cy+R+36);
+}
+
+function topLoop() {
+  topAngle += (topTarget - topAngle) * 0.055;
+  drawTop();
+  topRaf = requestAnimationFrame(topLoop);
+}
+topLoop();
+
+const topTargets = { organic:0, paper:-2*Math.PI/3, plastic:-4*Math.PI/3, home:0 };
+const topMsgs = {
+  organic:'→ Platform rotates — ORGANIC bin (0°) moves to drop point',
+  paper:'→ Platform rotates — PAPER bin (120°) moves to drop point',
+  plastic:'→ Platform rotates — PLASTIC bin (240°) moves to drop point',
+  home:'↺ Platform returns to home (Organic at drop point)'
+};
+function topRotate(cls) {
+  topTarget=topTargets[cls];
+  discTarget=binTargets[cls]; // sync 3D model
+  const s=document.getElementById('topStat');
+  s.textContent=topMsgs[cls]; s.className='sbar on';
+  setTimeout(()=>s.className='sbar',3500);
+  // sync 3D model buttons
+  ['btnOrg','btnPap','btnPla'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  if(cls==='organic') document.getElementById('btnOrg').classList.add('on');
+  if(cls==='paper') document.getElementById('btnPap').classList.add('on');
+  if(cls==='plastic') document.getElementById('btnPla').classList.add('on');
+}
+
+// ═══════════════════════════════════════
+// DROP MECHANISM SIDE VIEW
+// ═══════════════════════════════════════
+const dropC = document.getElementById('dropC');
+const dctx = dropC.getContext('2d');
+let dropRaf, dropRunning=false;
+let doorOpen=0, wasteY=0, wasteA=1, dPhase=0, dCls='organic', discDrawAngle=0, discDrawTarget=0;
+
+function resizeDrop() { dropC.width=dropC.clientWidth; }
+new ResizeObserver(resizeDrop).observe(dropC);
+resizeDrop();
+
+function drawDrop() {
+  const W=dropC.width, H=dropC.height;
+  dctx.clearRect(0,0,W,H);
+  dctx.fillStyle='#0d1117'; dctx.fillRect(0,0,W,H);
+  dctx.strokeStyle='#141e28'; dctx.lineWidth=0.4;
+  for(let x=0;x<W;x+=30){dctx.beginPath();dctx.moveTo(x,0);dctx.lineTo(x,H);dctx.stroke();}
+  for(let y=0;y<H;y+=30){dctx.beginPath();dctx.moveTo(0,y);dctx.lineTo(W,y);dctx.stroke();}
+
+  const S=n=>n*Math.min(W/480,H/510)*0.92;
+  const cx=W/2;
+
+  // Camera
+  dctx.fillStyle='#1a0a2e'; dctx.strokeStyle='#cc00ff'; dctx.lineWidth=1.2;
+  dctx.beginPath(); dctx.roundRect(cx-S(40),S(38),S(80),S(28),4); dctx.fill(); dctx.stroke();
+  dctx.fillStyle='#cc00ff'; dctx.font=`bold ${S(8.5)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('ESP32-CAM',cx,S(52));
+  dctx.fillStyle='rgba(204,0,255,.4)'; dctx.font=`${S(7)}px Azeret Mono`;
+  dctx.fillText('LENS ↓',cx,S(64));
+  dctx.strokeStyle='rgba(204,0,255,.15)'; dctx.setLineDash([4,4]);
+  dctx.beginPath(); dctx.moveTo(cx,S(66)); dctx.lineTo(cx,S(100)); dctx.stroke(); dctx.setLineDash([]);
+
+  // Ultrasonic
+  const usX=cx+S(68);
+  dctx.fillStyle='#1a1200'; dctx.strokeStyle='#f5a800'; dctx.lineWidth=1;
+  dctx.beginPath(); dctx.roundRect(usX-S(22),S(38),S(44),S(28),3); dctx.fill(); dctx.stroke();
+  dctx.fillStyle='#f5a800'; dctx.font=`bold ${S(7)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('HC-SR04',usX,S(52));
+  dctx.fillStyle='rgba(245,168,0,.5)'; dctx.font=`${S(6.5)}px Azeret Mono`;
+  dctx.fillText('↓ DETECT',usX,S(63));
+
+  // Scan tray
+  const tY=S(104);
+  const tW=S(112), tWH=S(18);
+  const tX=cx-tW/2;
+  dctx.fillStyle='#141e2a'; dctx.strokeStyle='#2a3f55'; dctx.lineWidth=1.5;
+  dctx.fillRect(tX-S(7),tY,S(7),tWH+S(8)); dctx.strokeRect(tX-S(7),tY,S(7),tWH+S(8));
+  dctx.fillRect(tX+tW,tY,S(7),tWH+S(8)); dctx.strokeRect(tX+tW,tY,S(7),tWH+S(8));
+  dctx.fillStyle='#1e2d3d'; dctx.fillRect(tX,tY,tW,S(8)); dctx.strokeRect(tX,tY,tW,S(8));
+  dctx.fillStyle='#253648'; dctx.font=`${S(8)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('← 10 cm scan tray →',cx,tY-S(7));
+
+  // Waste item
+  const wCol=BIN_COLORS[dCls];
+  const wY=tY+S(8)+wasteY-S(16);
+  dctx.save(); dctx.globalAlpha=wasteA;
+  dctx.fillStyle=wCol; dctx.strokeStyle='rgba(255,255,255,.2)'; dctx.lineWidth=1;
+  dctx.beginPath(); dctx.roundRect(cx-S(26),wY,S(52),S(19),4); dctx.fill(); dctx.stroke();
+  dctx.fillStyle='#000'; dctx.font=`bold ${S(8.5)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('WASTE',cx,wY+S(13));
+  dctx.restore();
+
+  // Trap door halves
+  const dY=tY+tWH+S(6);
+  const hw=tW/2;
+  dctx.save();
+  dctx.translate(tX,dY);dctx.rotate(-doorOpen);
+  dctx.fillStyle='#005577'; dctx.strokeStyle='#00d9f5'; dctx.lineWidth=1.5;
+  dctx.fillRect(0,-S(7),hw,S(8)); dctx.strokeRect(0,-S(7),hw,S(8));
+  dctx.restore();
+  dctx.save();
+  dctx.translate(tX+tW,dY);dctx.rotate(doorOpen);
+  dctx.fillRect(-hw,-S(7),hw,S(8)); dctx.strokeStyle='#00d9f5'; dctx.lineWidth=1.5;
+  dctx.strokeRect(-hw,-S(7),hw,S(8));
+  dctx.restore();
+  // Hinges
+  dctx.fillStyle='#00d9f5';
+  dctx.beginPath(); dctx.arc(tX,dY,S(3.5),0,Math.PI*2); dctx.fill();
+  dctx.beginPath(); dctx.arc(tX+tW,dY,S(3.5),0,Math.PI*2); dctx.fill();
+  // Servo2 label
+  dctx.fillStyle='#0e1624'; dctx.strokeStyle='#1c2a38'; dctx.lineWidth=1;
+  dctx.beginPath(); dctx.roundRect(tX-S(76),dY-S(11),S(62),S(22),3); dctx.fill(); dctx.stroke();
+  dctx.fillStyle='#5e7f96'; dctx.font=`${S(8)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('SERVO 2 (SG90)',tX-S(45),dY+S(3));
+
+  // Straight drop arrow (when door open)
+  if (dPhase>=3) {
+    dctx.strokeStyle=wCol+'88'; dctx.lineWidth=1.5; dctx.setLineDash([6,4]);
+    dctx.beginPath(); dctx.moveTo(cx,dY); dctx.lineTo(cx,H-S(100)); dctx.stroke(); dctx.setLineDash([]);
+  }
+
+  // ROTATING PLATFORM cross-section view
+  const platY=H-S(125);
+  const platW=W*0.78, platH=S(18);
+  const platX=cx-platW/2;
+
+  // Platform disc (side view = rectangle)
+  dctx.fillStyle='#141e10'; dctx.strokeStyle='rgba(184,240,0,.4)'; dctx.lineWidth=1.5;
+
+  // Platform with rotation effect
+  dctx.save();
+  dctx.translate(cx,platY+platH/2);
+
+  // Draw partial disc perspective
+  dctx.fillStyle='#141e10';
+  dctx.beginPath(); dctx.ellipse(0,0,platW/2,S(8),0,0,Math.PI*2); dctx.fill();
+  dctx.strokeStyle='rgba(184,240,0,.4)'; dctx.lineWidth=1.5; dctx.stroke();
+
+  // Rotation stripe on disc
+  const stripeA=discDrawAngle;
+  dctx.strokeStyle='rgba(184,240,0,.25)'; dctx.lineWidth=1;
+  dctx.beginPath(); dctx.moveTo(0,0); dctx.lineTo(Math.cos(stripeA)*platW/2,Math.sin(stripeA)*S(7)); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(0,0); dctx.lineTo(Math.cos(stripeA+2.09)*platW/2,Math.sin(stripeA+2.09)*S(7)); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(0,0); dctx.lineTo(Math.cos(stripeA+4.19)*platW/2,Math.sin(stripeA+4.19)*S(7)); dctx.stroke();
+
+  dctx.restore();
+
+  // MG90S servo below platform
+  dctx.fillStyle='#1a1a2e'; dctx.strokeStyle='#8888ff'; dctx.lineWidth=1;
+  dctx.beginPath(); dctx.roundRect(cx-S(22),platY+platH+S(4),S(44),S(22),3); dctx.fill(); dctx.stroke();
+  dctx.fillStyle='#8888ff'; dctx.font=`bold ${S(8)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('MG90S SERVO',cx,platY+platH+S(18));
+
+  // Servo shaft connecting to platform
+  dctx.strokeStyle='#8888ff66'; dctx.lineWidth=2;
+  dctx.beginPath(); dctx.moveTo(cx,platY+platH); dctx.lineTo(cx,platY+platH+S(4)); dctx.stroke();
+
+  // Platform dim
+  dctx.strokeStyle='#253648'; dctx.lineWidth=0.8;
+  dctx.beginPath(); dctx.moveTo(platX,platY+platH+S(4)); dctx.lineTo(platX+platW,platY+platH+S(4)); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(platX,platY); dctx.lineTo(platX,platY+platH+S(8)); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(platX+platW,platY); dctx.lineTo(platX+platW,platY+platH+S(8)); dctx.stroke();
+  dctx.fillStyle='#b8f000'; dctx.font=`bold ${S(9)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.fillText('← 30 cm rotating disc →',cx,platY+platH+S(14));
+
+  // THREE BINS on platform cross-section
+  const binsOnPlatform = [
+    {key:'organic',col:'#00d966', xOff:-platW*0.3},
+    {key:'paper',  col:'#f5a800', xOff:0},
+    {key:'plastic',col:'#1a5cff', xOff:platW*0.3},
+  ];
+
+  // Figure which bin is currently aligned (closest to center in the rotated frame)
+  binsOnPlatform.forEach((b,i)=>{
+    const isActive = b.key===dCls;
+    const bX = cx + b.xOff;
+    const bW = S(64), bH = S(72);
+    dctx.fillStyle = isActive ? b.col+'22' : '#0d1218';
+    dctx.strokeStyle = isActive ? b.col : '#1c2a38';
+    dctx.lineWidth = isActive ? 2 : 1;
+    dctx.beginPath(); dctx.roundRect(bX-bW/2,platY-bH,bW,bH,3); dctx.fill(); dctx.stroke();
+    dctx.fillStyle=b.col; dctx.font=`bold ${S(9.5)}px Azeret Mono`; dctx.textAlign='center';
+    dctx.fillText(b.key.toUpperCase(),bX,platY-bH*0.55);
+    dctx.fillStyle=b.col+'77'; dctx.font=`${S(7.5)}px Azeret Mono`;
+    dctx.fillText(BIN_SERVO[b.key],bX,platY-bH*0.32);
+    dctx.fillStyle='#283d4f'; dctx.font=`${S(7)}px Azeret Mono`;
+    dctx.fillText('10×15 cm',bX,platY-S(8));
+    if(isActive){
+      // Alignment indicator
+      dctx.strokeStyle=b.col+'55'; dctx.lineWidth=1; dctx.setLineDash([3,3]);
+      dctx.beginPath(); dctx.moveTo(bX,platY-bH); dctx.lineTo(cx,dY); dctx.stroke(); dctx.setLineDash([]);
+    }
+  });
+
+  // Total height annotation
+  dctx.strokeStyle='#1c2a38'; dctx.lineWidth=0.8;
+  const annX=S(18);
+  dctx.beginPath(); dctx.moveTo(annX,S(38)); dctx.lineTo(annX,H-S(40)); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(annX-S(4),S(38)); dctx.lineTo(annX+S(4),S(38)); dctx.stroke();
+  dctx.beginPath(); dctx.moveTo(annX-S(4),H-S(40)); dctx.lineTo(annX+S(4),H-S(40)); dctx.stroke();
+  dctx.save(); dctx.fillStyle='#253648'; dctx.font=`${S(8.5)}px Azeret Mono`; dctx.textAlign='center';
+  dctx.translate(annX-S(10),(S(38)+H-S(40))/2); dctx.rotate(-Math.PI/2);
+  dctx.fillText('45 cm TOTAL',0,0); dctx.restore();
+}
+
+function resetDrop() {
+  if(dropRaf){cancelAnimationFrame(dropRaf);dropRaf=null;}
+  dropRunning=false; doorOpen=0; wasteY=0; wasteA=1; dPhase=0; discDrawAngle=0; discDrawTarget=0;
+  drawDrop();
+  const s=document.getElementById('dropStat'); s.textContent='Select a bin to watch the full drop sequence'; s.className='sbar';
+}
+
+function runDrop(cls) {
+  resetDrop(); dCls=cls; dropRunning=true;
+  const msgs=[
+    `→ ML classified: ${cls.toUpperCase()} — Rotating platform to align ${cls} bin...`,
+    `→ Platform locked in position — Servo 2 opening trap door...`,
+    `→ Waste dropping straight down into ${cls.toUpperCase()} bin...`,
+    `✓ Complete — ${cls.toUpperCase()} bin received waste — platform returning home`
+  ];
+  const s=document.getElementById('dropStat'); s.className='sbar on';
+  const targetDiscA = {organic:0, paper:-Math.PI*0.7, plastic:Math.PI*0.7}[cls];
+  let f=0;
+  function tick(){
+    f++;
+    // Phase 0-50: disc rotates
+    if(f===1) s.textContent=msgs[0];
+    if(f<51){
+      discDrawTarget=targetDiscA*(f/50);
+      discDrawAngle+=(discDrawTarget-discDrawAngle)*0.12;
+      drawDrop(); dropRaf=requestAnimationFrame(tick); return;
+    }
+    // Phase 51-90: door opens
+    if(f===51) s.textContent=msgs[1];
+    if(f>=51&&f<91){
+      dPhase=2; doorOpen=Math.min(Math.PI*.48,(f-51)/39*Math.PI*.48);
+      drawDrop(); dropRaf=requestAnimationFrame(tick); return;
+    }
+    // Phase 91-165: waste falls
+    if(f===91) s.textContent=msgs[2];
+    if(f>=91&&f<166){
+      dPhase=3; wasteY+=(f-90)*1.4; wasteA=Math.max(0,1-(f-130)/38);
+      drawDrop(); dropRaf=requestAnimationFrame(tick); return;
+    }
+    // Phase 166-210: door closes
+    if(f>=166&&f<211){
+      dPhase=3; doorOpen=Math.max(0,Math.PI*.48-(f-166)/44*Math.PI*.48);
+      discDrawAngle+=(0-discDrawAngle)*0.04;
+      drawDrop(); dropRaf=requestAnimationFrame(tick); return;
+    }
+    wasteY=0; wasteA=1; dPhase=0; discDrawAngle=0; drawDrop();
+    s.textContent=msgs[3]; dropRunning=false;
+  }
+  dropRaf=requestAnimationFrame(tick);
+}
+
+// ═══════════════════════════════════════
+// MEASUREMENTS CANVAS
+// ═══════════════════════════════════════
+const measC = document.getElementById('measC');
+const mctx = measC.getContext('2d');
+function resizeMeas() { measC.width=measC.clientWidth; drawMeas(); }
+new ResizeObserver(resizeMeas).observe(measC);
+
+function drawMeas() {
+  const W=measC.width, H=measC.height;
+  mctx.clearRect(0,0,W,H);
+  mctx.fillStyle='#0d1117'; mctx.fillRect(0,0,W,H);
+  mctx.strokeStyle='#141e28'; mctx.lineWidth=0.4;
+  for(let x=0;x<W;x+=24){mctx.beginPath();mctx.moveTo(x,0);mctx.lineTo(x,H);mctx.stroke();}
+  for(let y=0;y<H;y+=24){mctx.beginPath();mctx.moveTo(0,y);mctx.lineTo(W,y);mctx.stroke();}
+
+  const S=n=>n*Math.min(W/430,H/460)*0.86;
+  const ox=S(44), oy=H-S(32);
+
+  function r(x,y,w,h,fill,stk,lbl,lc){
+    mctx.fillStyle=fill; mctx.fillRect(ox+S(x),oy-S(y+h),S(w),S(h));
+    mctx.strokeStyle=stk; mctx.lineWidth=1; mctx.strokeRect(ox+S(x),oy-S(y+h),S(w),S(h));
+    if(lbl){mctx.fillStyle=lc||stk;mctx.font=`bold ${Math.max(7,S(8))}px Azeret Mono`;mctx.textAlign='center';mctx.fillText(lbl,ox+S(x+w/2),oy-S(y+h/2)+3);}
+  }
+
+  // Base
+  r(0,0,320,8,'#2a1c08','#7a5015','BASE 40cm');
+  // Rotating disc (circle approximated as ellipse)
+  const dCx=ox+S(160), dCy=oy-S(8)-S(4);
+  mctx.fillStyle='rgba(184,240,0,.07)'; mctx.strokeStyle='rgba(184,240,0,.5)'; mctx.lineWidth=1.5;
+  mctx.beginPath(); mctx.ellipse(dCx,dCy,S(120),S(28),0,0,Math.PI*2); mctx.fill(); mctx.stroke();
+  mctx.fillStyle='rgba(184,240,0,.5)'; mctx.font=`bold ${S(8)}px Azeret Mono`; mctx.textAlign='center';
+  mctx.fillText('ROTATING DISC — 30 cm ∅',dCx,dCy+S(4));
+  // Center hub
+  mctx.fillStyle='rgba(0,217,245,.2)'; mctx.strokeStyle='#00d9f5'; mctx.lineWidth=1;
+  mctx.beginPath(); mctx.ellipse(dCx,dCy,S(20),S(8),0,0,Math.PI*2); mctx.fill(); mctx.stroke();
+
+  // Tower
+  r(246,8,64,290,'#0c1420','#2a3f55','TOWER','#2a3f55');
+  r(254,220,48,22,'#003300','#00d966','UNO','#00d966');
+  r(256,178,44,16,'#001020','#00d9f5','LCD','#00d9f5');
+
+  // Camera pole
+  r(120,8,7,300,'#1c2a38','#2a3f55');
+  // Camera roof
+  r(98,308,84,14,'#2a1c08','#7a5015');
+  // ESP32-CAM
+  r(102,322,74,26,'#081a0c','#00d966','CAM','#00d966');
+  // Ultrasonic
+  r(102,350,48,20,'#1a1200','#f5a800','US','#f5a800');
+  // Scan tray
+  r(65,284,100,16,'#141e2a','#00d9f5','SCAN TRAY','#00d9f5');
+  // Trap door halves
+  r(65,268,45,16,'#003344','#00d9f5');
+  r(120,268,45,16,'#003344','#00d9f5');
+  // Three bins on disc (side view)
+  r(18,8,60,120,'#081408','#00d966','ORGANIC','#00d966');
+  r(88,8,60,120,'#181200','#f5a800','PAPER','#f5a800');
+  r(158,8,60,120,'#08101a','#1a5cff','PLASTIC','#1a5cff');
+  // MG90S servo below
+  r(134,-28,58,26,'#1a1a2e','#8888ff','MG90S','#8888ff');
+
+  // DIMENSION LINES
+  function dimH(x1,x2,y,lbl){
+    const px1=ox+S(x1),px2=ox+S(x2),py=oy-S(y);
+    mctx.strokeStyle='#253648'; mctx.lineWidth=0.8;
+    mctx.beginPath(); mctx.moveTo(px1,py+8); mctx.lineTo(px2,py+8); mctx.stroke();
+    mctx.beginPath(); mctx.moveTo(px1,py+3); mctx.lineTo(px1,py+13); mctx.stroke();
+    mctx.beginPath(); mctx.moveTo(px2,py+3); mctx.lineTo(px2,py+13); mctx.stroke();
+    mctx.fillStyle='#b8f000'; mctx.font=`bold ${S(8)}px Azeret Mono`; mctx.textAlign='center';
+    mctx.fillText(lbl,(px1+px2)/2,py+24);
+  }
+  function dimV(x,y1,y2,lbl){
+    const px=ox+S(x),py1=oy-S(y1),py2=oy-S(y2);
+    mctx.strokeStyle='#253648'; mctx.lineWidth=0.8;
+    mctx.beginPath(); mctx.moveTo(px-7,py1); mctx.lineTo(px-7,py2); mctx.stroke();
+    mctx.beginPath(); mctx.moveTo(px-12,py1); mctx.lineTo(px-2,py1); mctx.stroke();
+    mctx.beginPath(); mctx.moveTo(px-12,py2); mctx.lineTo(px-2,py2); mctx.stroke();
+    mctx.save(); mctx.fillStyle='#b8f000'; mctx.font=`bold ${S(8)}px Azeret Mono`; mctx.textAlign='center';
+    mctx.translate(px-19,(py1+py2)/2); mctx.rotate(-Math.PI/2); mctx.fillText(lbl,0,0); mctx.restore();
+  }
+
+  dimH(0,320,0,'40 cm base width');
+  dimH(18,78,134,'10 cm bin');
+  dimH(246,310,308,'8 cm tower');
+  dimH(65,165,264,'10 cm trap door');
+  dimV(0,8,128,'15 cm bin height');
+  dimV(-10,8,298,'35 cm tower');
+  dimV(-22,0,360,'45 cm total');
+
+  // TOP VIEW inset (mini)
+  const tvX=W-S(118), tvY=S(18), tvR=S(48);
+  mctx.fillStyle='#0d1117'; mctx.strokeStyle='#1c2a38'; mctx.lineWidth=1;
+  mctx.beginPath(); mctx.arc(tvX,tvY+tvR,tvR+S(8),0,Math.PI*2); mctx.fill(); mctx.stroke();
+  mctx.fillStyle='rgba(184,240,0,.07)'; mctx.strokeStyle='rgba(184,240,0,.4)'; mctx.lineWidth=1.2;
+  mctx.beginPath(); mctx.arc(tvX,tvY+tvR,tvR,0,Math.PI*2); mctx.fill(); mctx.stroke();
+  ['#00d966','#f5a800','#1a5cff'].forEach((c,i)=>{
+    const a=-Math.PI/2+i*2*Math.PI/3;
+    const bx=tvX+Math.cos(a)*tvR*0.6, by=tvY+tvR+Math.sin(a)*tvR*0.6;
+    mctx.fillStyle=c+'33'; mctx.strokeStyle=c; mctx.lineWidth=1;
+    mctx.beginPath(); mctx.arc(bx,by,tvR*0.22,0,Math.PI*2); mctx.fill(); mctx.stroke();
+    mctx.fillStyle=c; mctx.font=`bold ${S(6.5)}px Azeret Mono`; mctx.textAlign='center';
+    mctx.fillText(['ORG','PAP','PLA'][i],bx,by+S(2.5));
+  });
+  mctx.fillStyle='#1c2a38'; mctx.beginPath(); mctx.arc(tvX,tvY+tvR,tvR*0.1,0,Math.PI*2); mctx.fill();
+  mctx.strokeStyle='#00d9f5'; mctx.lineWidth=1; mctx.stroke();
+  mctx.fillStyle='#5e7f96'; mctx.font=`${S(7)}px Azeret Mono`; mctx.textAlign='center';
+  mctx.fillText('TOP VIEW',tvX,tvY+tvR*2+S(14));
+  mctx.fillText('120° per bin',tvX,tvY+tvR*2+S(24));
+
+  mctx.fillStyle='#b8f000'; mctx.font=`bold ${S(9)}px Azeret Mono`; mctx.textAlign='center';
+  mctx.fillText('FRONT VIEW — OPTION B ROTATING BIN',W/2,S(20));
+  mctx.fillStyle='#283d4f'; mctx.font=`${S(7.5)}px Azeret Mono`;
+  mctx.fillText('All dims in cm · Double-layer cardboard base + disc',W/2,S(33));
+}
+
+window.addEventListener('load',()=>{resizeMeas();resizeDrop();resizeTop();resizeIso();});
+window.addEventListener('resize',()=>{resizeMeas();resizeDrop();resizeTop();resizeIso();});
+</script>
+</body>
+</html>
