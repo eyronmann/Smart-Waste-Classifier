@@ -45,3 +45,8 @@ ML MODEL:
 - Input: 96x96 RGB image
 - Accuracy: 90%
 - Inference: on-device, no internet required
+
+ML MODEL:
+Download Edge Impulse library from:
+https://studio.edgeimpulse.com/public/988154/live
+Project name: classified-capture
